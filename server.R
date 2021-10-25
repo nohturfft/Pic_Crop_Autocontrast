@@ -1,0 +1,130 @@
+library(shiny)
+requireNamespace("imager")
+
+my.rescale <- function(imge) {
+  (imge - min(imge)) / (max(imge) - min(imge))
+}
+
+shinyServer(function(input, output, server, session) {
+  # browser()
+  rv <- reactiveValues(
+    files = NULL,
+    img1 = NULL,
+    img1.crop = NULL,
+    img1.crop.rescale = NULL,
+    img2 = NULL,
+    img2.crop = NULL,
+    img2.crop.rescale = NULL,
+    composite.original = NULL,
+    composite.rescaled = NULL,
+    crop.x = 1,
+    crop.y = 1,
+    crop.size = 500
+  )
+  
+  observeEvent(input$size,  {
+    print("observeEvent(input$size)")
+    rv$crop.size <- input$size
+    print(rv$size)
+  })
+  
+  observeEvent(input$coord.x,  {
+    print("observeEvent(input$coord.x)")
+    rv$crop.x <- input$coord.x
+    print(rv$crop.x)
+  })
+  
+  observeEvent(input$coord.y,  {
+    print("observeEvent(input$coord.y)")
+    rv$crop.y <- input$coord.y
+    print(rv$crop.y)
+  })
+  
+  # observeEvent(input$files,  {
+  #   print("observeEvent(input$files)")
+  #   rv$files <- input$files
+  #   print(rv$files)
+  # })
+  
+  observeEvent(input$files, {
+    # browser()
+    print("observeEvent(input$files)")
+    rv$files <- input$files
+    # Load images from file:
+    rv$img1 <- imager::load.image(rv$files$datapath[1])
+    rv$img2 <- imager::load.image(rv$files$datapath[2])
+    # Crop images:
+    # rv$img1.crop <- imager::imsub(rv$img1, x < rv$crop.size, y < rv$crop.size)
+    # rv$img2.crop <- imager::imsub(rv$img2, x < rv$crop.size, y < rv$crop.size)
+    # Rescale images ("autocontrast")
+    # rv$img1.crop.rescale <- my.rescale(rv$img1.crop)
+    # rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
+    # Combine images:
+    # rv$composite.original <- imager::imappend(list(rv$img1.crop, rv$img2.crop), "x")
+    # rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, rv$img2.crop.rescale), "x")
+  })
+  
+  observe({
+    # browser()
+    print("observe() - 01")
+    if (!is.null(rv$img1)) {
+      rv$img1.crop <- imager::imsub(rv$img1, x < rv$crop.size, y < isolate(rv$crop.size))
+    }
+  })
+  
+  observe({
+    print("observe() - 02")
+    if (!is.null(rv$img2)) {
+      rv$img2.crop <- imager::imsub(rv$img2, x < rv$crop.size, y < isolate(rv$crop.size))
+    }
+  })
+  
+  observe({
+    print("observe() - 03")
+    if (!is.null(rv$img1.crop)) {
+      rv$img1.crop.rescale <- my.rescale(rv$img1.crop)
+    }
+  })
+  
+  observe({
+    print("observe() - 04")
+    if (!is.null(rv$img2.crop)) {
+      rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
+    }
+  })
+  
+  observe({
+    print("observe() - 05")
+    if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
+      rv$composite.original <- imager::imappend(list(rv$img1.crop, rv$img2.crop), "x")
+    }
+  })
+  
+  observe({
+    print("observe() - 06")
+    if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
+      rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, rv$img2.crop.rescale), "x")
+    }
+  })
+  
+  
+  output$plot1 <- renderPlot({
+    if (!is.null(rv$composite.original)) {
+      plot(rv$composite.original, rescale=FALSE)
+    }
+  })
+  
+  output$plot2 <- renderPlot({
+    if (!is.null(rv$composite.rescaled)) {
+      plot(rv$composite.rescaled, rescale=FALSE)
+    }
+  })
+  
+  # Respond to Quit button
+  observeEvent(input$navbar, {
+    if (input$navbar == "stop") {
+      print("Quitting app ...")
+      stopApp()
+    }
+  })
+})

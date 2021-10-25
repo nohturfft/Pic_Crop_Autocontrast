@@ -1,0 +1,32 @@
+library(shiny)
+library(rhandsontable)
+library(shinyjs)
+
+shinyUI(
+  navbarPage(
+    id="navbar",
+    title = "Crop and Autocontrast",
+    tabPanel(
+      id = "tabpanel_1",
+      title = "Main",
+      fluidPage(
+        column(width=4,
+               fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
+               numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
+               numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
+               numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1)
+        ), # end column
+        column(width=8,
+               plotOutput("plot1"),
+               plotOutput("plot2")
+        ) # end column
+      ) # end fluidPage
+    ), # end TabPanel
+    tabPanel(
+      title = "Quit",
+      value="stop",
+      icon = icon("circle-o-notch")
+    ) # end tabPanel "quit"
+  ) # end navbarPage
+) # end ShinyUI
+
