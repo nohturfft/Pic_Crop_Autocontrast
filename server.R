@@ -40,12 +40,6 @@ shinyServer(function(input, output, server, session) {
     print(rv$crop.y)
   })
   
-  # observeEvent(input$files,  {
-  #   print("observeEvent(input$files)")
-  #   rv$files <- input$files
-  #   print(rv$files)
-  # })
-  
   observeEvent(input$files, {
     # browser()
     print("observeEvent(input$files)")
@@ -53,15 +47,6 @@ shinyServer(function(input, output, server, session) {
     # Load images from file:
     rv$img1 <- imager::load.image(rv$files$datapath[1])
     rv$img2 <- imager::load.image(rv$files$datapath[2])
-    # Crop images:
-    # rv$img1.crop <- imager::imsub(rv$img1, x < rv$crop.size, y < rv$crop.size)
-    # rv$img2.crop <- imager::imsub(rv$img2, x < rv$crop.size, y < rv$crop.size)
-    # Rescale images ("autocontrast")
-    # rv$img1.crop.rescale <- my.rescale(rv$img1.crop)
-    # rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
-    # Combine images:
-    # rv$composite.original <- imager::imappend(list(rv$img1.crop, rv$img2.crop), "x")
-    # rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, rv$img2.crop.rescale), "x")
   })
   
   observe({
@@ -109,12 +94,14 @@ shinyServer(function(input, output, server, session) {
   
   
   output$plot1 <- renderPlot({
+    print("output$plot1")
     if (!is.null(rv$composite.original)) {
       plot(rv$composite.original, rescale=FALSE)
     }
   })
   
   output$plot2 <- renderPlot({
+    print("output$plot2")
     if (!is.null(rv$composite.rescaled)) {
       plot(rv$composite.rescaled, rescale=FALSE)
     }
