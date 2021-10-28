@@ -1,8 +1,14 @@
 library(shiny)
-requireNamespace("imager")
+library(imager)
 
 my.rescale <- function(imge) {
   (imge - min(imge)) / (max(imge) - min(imge))
+}
+
+my.crop <- function(pic, breite, start.x, start.y) {
+  imager::imsub(pic,
+                x %inr% c(start.x, start.x + breite - 1),
+                y %inr% c(start.y, start.y + breite - 1))
 }
 
 shinyServer(function(input, output, server, session) {
@@ -53,22 +59,22 @@ shinyServer(function(input, output, server, session) {
     # browser()
     print("observe() - 01")
     if (!is.null(rv$img1)) {
-      rv$img1.crop <- imager::imsub(rv$img1, x < rv$crop.size, y < isolate(rv$crop.size))
-    }
-  })
+      rv$img1.crop <- my.crop(rv$img1, rv$crop.size, rv$crop.x, rv$crop.y)
+    } # end if
+  }) # end observe
   
   observe({
     print("observe() - 02")
     if (!is.null(rv$img2)) {
-      rv$img2.crop <- imager::imsub(rv$img2, x < rv$crop.size, y < isolate(rv$crop.size))
-    }
+      rv$img2.crop <- my.crop(rv$img2, rv$crop.size, rv$crop.x, rv$crop.y)
+    } # end if
   })
   
   observe({
     print("observe() - 03")
     if (!is.null(rv$img1.crop)) {
       rv$img1.crop.rescale <- my.rescale(rv$img1.crop)
-    }
+    } # end if
   })
   
   observe({
@@ -82,14 +88,14 @@ shinyServer(function(input, output, server, session) {
     print("observe() - 05")
     if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
       rv$composite.original <- imager::imappend(list(rv$img1.crop, rv$img2.crop), "x")
-    }
+    } # end if
   })
   
   observe({
     print("observe() - 06")
     if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
       rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, rv$img2.crop.rescale), "x")
-    }
+    } # end if
   })
   
   
