@@ -94,7 +94,8 @@ shinyServer(function(input, output, server, session) {
   observe({
     print("observe() - 05")
     if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
-      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "yellow")
+      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
+        grayscale(.)
       rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
     } # end if
   })
@@ -102,7 +103,8 @@ shinyServer(function(input, output, server, session) {
   observe({
     print("observe() - 06")
     if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
-      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white")
+      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white") %>% 
+        grayscale(.)
       rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, img.gap, rv$img2.crop.rescale), "x")
     } # end if
   })
