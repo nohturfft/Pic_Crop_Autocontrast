@@ -25,7 +25,8 @@ shinyServer(function(input, output, server, session) {
     composite.rescaled = NULL,
     crop.x = 1,
     crop.y = 1,
-    crop.size = 500
+    crop.size = 500,
+    gap.size = 15
   )
   
   observeEvent(input$size,  {
@@ -53,6 +54,12 @@ shinyServer(function(input, output, server, session) {
     # Load images from file:
     rv$img1 <- imager::load.image(rv$files$datapath[1])
     rv$img2 <- imager::load.image(rv$files$datapath[2])
+  })
+  
+  observeEvent(input$gap, {
+    print("observeEvent(input$gap)")
+    rv$gap.size <- input$gap
+    print(paste("New gap:", rv$gap.size))
   })
   
   observe({
@@ -87,14 +94,16 @@ shinyServer(function(input, output, server, session) {
   observe({
     print("observe() - 05")
     if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
-      rv$composite.original <- imager::imappend(list(rv$img1.crop, rv$img2.crop), "x")
+      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "yellow")
+      rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
     } # end if
   })
   
   observe({
     print("observe() - 06")
     if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
-      rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, rv$img2.crop.rescale), "x")
+      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white")
+      rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, img.gap, rv$img2.crop.rescale), "x")
     } # end if
   })
   
