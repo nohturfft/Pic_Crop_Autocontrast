@@ -70,21 +70,6 @@ shinyServer(function(input, output, server, session) {
     print(paste("New gap:", rv$gap.size))
   })
   
-  # observe({
-  #   # browser()
-  #   print("observe() - 01")
-  #   if (!is.null(rv$img1)) {
-  #     rv$img1.crop <- my.crop(rv$img1, rv$crop.size, rv$crop.x, rv$crop.y)
-  #   } # end if
-  # }) # end observe
-  
-  # observe({
-  #   print("observe() - 02")
-  #   if (!is.null(rv$img2)) {
-  #     rv$img2.crop <- my.crop(rv$img2, rv$crop.size, rv$crop.x, rv$crop.y)
-  #   } # end if
-  # })
-  
   observe({
     print("observe() - 01")
     if (!is.null(rv$img.list)) {
@@ -101,41 +86,13 @@ shinyServer(function(input, output, server, session) {
     } # end if
   })
   
-  # observe({
-  #   print("observe() - 04")
-  #   if (!is.null(rv$img2.crop)) {
-  #     rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
-  #   }
-  # })
-  
-  # observe({
-  #   print("observe() - 05")
-  #   if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
-  #     img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
-  #       grayscale(.)
-  #     rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
-  #   } # end if
-  # })
-  
   observe({
     print("observe() - 03")
     if (! is.null(rv$img.list.crop)) {
-      # img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
-      #   grayscale(.)
       img.gap <- make.gap(rv$img.list.crop, rv$gap.size)
-      # rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
       rv$composite.original <- imager::imappend(list(rv$img.list.crop[[1]], img.gap, rv$img.list.crop[[2]]), "x")
     } # end if
   })
-  
-  # observe({
-  #   print("observe() - 06")
-  #   if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
-  #     img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white") %>% 
-  #       grayscale(.)
-  #     rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, img.gap, rv$img2.crop.rescale), "x")
-  #   } # end if
-  # })
   
   observe({
     print("observe() - 04")
