@@ -5,6 +5,7 @@ library(shiny)
 library(imager)
 library(magrittr)
 requireNamespace("purrr")
+requireNamespace("EBImage")
 
 #-------------------------------------------------------------------------------!
 # Functions
@@ -50,14 +51,23 @@ shinyServer(function(input, output, server, session) {
     gap.size = 15,
     img.list = NULL,
     img.list.crop = NULL,
-    img.list.crop.rescale = NULL
+    img.list.crop.rescale = NULL,
+    color.list = NULL
+    # tmp = NULL
   )
   
   observeEvent(input$files, {
     print("observeEvent(input$files)")
-    rv$files <- input$files
+    rv$files <- input$files # data frame
+    rv$color.list <- rep("grayscale", nrow(rv$files))
     # Load images from file:
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
+    # Generate ui dropdown buttons for color choice:
+    output$colorchoosers <- renderUI ({
+      lapply(seq_len(nrow(rv$files)), function(i) {
+        selectInput(paste0("id_", i), paste("Label", i), choices=c("Grayscale", "Green", "Blue", "Red"))
+      })
+    })
   })
   
   observeEvent(input$size,  {
@@ -97,6 +107,7 @@ shinyServer(function(input, output, server, session) {
     print("observe() - 02")
     if (!is.null(rv$img.list.crop)) {
       rv$img.list.crop.rescale <- lapply(rv$img.list.crop, my.rescale)
+      # rv$tmp <- EBImage::rgbImage(green=rv$img.list.crop.rescale[[2]])
     } # end if
   }) # end observe
   
@@ -104,7 +115,7 @@ shinyServer(function(input, output, server, session) {
     print("observe() - 03")
     if (! is.null(rv$img.list.crop)) {
       img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
-      # rv$composite.original <- imager::imappend(list(rv$img.list.crop[[1]], img.gap, rv$img.list.crop[[2]]), "x")
+      # Make composite image
       rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
     } # end if
   }) # end observe
@@ -112,10 +123,10 @@ shinyServer(function(input, output, server, session) {
   observe({
     print("observe() - 04")
     if (! is.null(rv$img.list.crop.rescale)) {
-      # browser()
       img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
+      # Make composite image
       rv$composite.rescaled <- merge.pics(rv$img.list.crop.rescale, img.gap)
-      dummy <- 1
+      
     } # end if
   }) # end observe
   
@@ -132,6 +143,13 @@ shinyServer(function(input, output, server, session) {
       plot(rv$composite.rescaled, rescale=FALSE, main="Autocontrast")
     } # end if
   }) # end renderPlot
+  
+  # output$plot3 <- renderPlot({
+  #   print("output$plot3")
+  #   if (!is.null(rv$tmp)) {
+  #     plot(rv$tmp, rescale=FALSE)
+  #   } # end if
+  # }) # end renderPlot
   
   # Respond to Quit button
   observeEvent(input$navbar, {
