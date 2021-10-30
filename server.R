@@ -11,6 +11,11 @@ my.crop <- function(pic, breite, start.x, start.y) {
                 y %inr% c(start.y, start.y + breite - 1))
 }
 
+make.gap <- function(image.list, gap.width) {
+  imager::imfill(x=gap.width, y=height(image.list[[1]]), z=1, val = "white") %>% 
+    grayscale(.)
+}
+
 shinyServer(function(input, output, server, session) {
   # browser()
   rv <- reactiveValues(
@@ -26,8 +31,20 @@ shinyServer(function(input, output, server, session) {
     crop.x = 1,
     crop.y = 1,
     crop.size = 500,
-    gap.size = 15
+    gap.size = 15,
+    img.list = NULL,
+    img.list.crop = NULL,
+    img.list.crop.rescale = NULL
   )
+  
+  observeEvent(input$files, {
+    print("observeEvent(input$files)")
+    rv$files <- input$files
+    # Load images from file:
+    rv$img1 <- imager::load.image(rv$files$datapath[1])
+    rv$img2 <- imager::load.image(rv$files$datapath[2])
+    rv$img.list <- lapply(rv$files$datapath, imager::load.image)
+  })
   
   observeEvent(input$size,  {
     print("observeEvent(input$size)")
@@ -47,65 +64,86 @@ shinyServer(function(input, output, server, session) {
     print(rv$crop.y)
   })
   
-  observeEvent(input$files, {
-    # browser()
-    print("observeEvent(input$files)")
-    rv$files <- input$files
-    # Load images from file:
-    rv$img1 <- imager::load.image(rv$files$datapath[1])
-    rv$img2 <- imager::load.image(rv$files$datapath[2])
-  })
-  
   observeEvent(input$gap, {
     print("observeEvent(input$gap)")
     rv$gap.size <- input$gap
     print(paste("New gap:", rv$gap.size))
   })
   
+  # observe({
+  #   # browser()
+  #   print("observe() - 01")
+  #   if (!is.null(rv$img1)) {
+  #     rv$img1.crop <- my.crop(rv$img1, rv$crop.size, rv$crop.x, rv$crop.y)
+  #   } # end if
+  # }) # end observe
+  
+  # observe({
+  #   print("observe() - 02")
+  #   if (!is.null(rv$img2)) {
+  #     rv$img2.crop <- my.crop(rv$img2, rv$crop.size, rv$crop.x, rv$crop.y)
+  #   } # end if
+  # })
+  
   observe({
-    # browser()
     print("observe() - 01")
-    if (!is.null(rv$img1)) {
-      rv$img1.crop <- my.crop(rv$img1, rv$crop.size, rv$crop.x, rv$crop.y)
+    if (!is.null(rv$img.list)) {
+      rv$img.list.crop <- lapply(rv$img.list, function(img) {
+        my.crop(img, rv$crop.size, rv$crop.x, rv$crop.y)
+      })
     } # end if
   }) # end observe
   
   observe({
     print("observe() - 02")
-    if (!is.null(rv$img2)) {
-      rv$img2.crop <- my.crop(rv$img2, rv$crop.size, rv$crop.x, rv$crop.y)
+    if (!is.null(rv$img.list.crop)) {
+      rv$img.list.crop.rescale <- lapply(rv$img.list.crop, my.rescale)
     } # end if
   })
+  
+  # observe({
+  #   print("observe() - 04")
+  #   if (!is.null(rv$img2.crop)) {
+  #     rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
+  #   }
+  # })
+  
+  # observe({
+  #   print("observe() - 05")
+  #   if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
+  #     img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
+  #       grayscale(.)
+  #     rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
+  #   } # end if
+  # })
   
   observe({
     print("observe() - 03")
-    if (!is.null(rv$img1.crop)) {
-      rv$img1.crop.rescale <- my.rescale(rv$img1.crop)
+    if (! is.null(rv$img.list.crop)) {
+      # img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
+      #   grayscale(.)
+      img.gap <- make.gap(rv$img.list.crop, rv$gap.size)
+      # rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
+      rv$composite.original <- imager::imappend(list(rv$img.list.crop[[1]], img.gap, rv$img.list.crop[[2]]), "x")
     } # end if
   })
+  
+  # observe({
+  #   print("observe() - 06")
+  #   if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
+  #     img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white") %>% 
+  #       grayscale(.)
+  #     rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, img.gap, rv$img2.crop.rescale), "x")
+  #   } # end if
+  # })
   
   observe({
     print("observe() - 04")
-    if (!is.null(rv$img2.crop)) {
-      rv$img2.crop.rescale <- my.rescale(rv$img2.crop)
-    }
-  })
-  
-  observe({
-    print("observe() - 05")
-    if (! any(c(is.null(rv$img1.crop), is.null(rv$img2.crop)))) {
-      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop), z=1, val = "white") %>% 
-        grayscale(.)
-      rv$composite.original <- imager::imappend(list(rv$img1.crop, img.gap, rv$img2.crop), "x")
-    } # end if
-  })
-  
-  observe({
-    print("observe() - 06")
-    if (! any(c(is.null(rv$img1.crop.rescale), is.null(rv$img2.crop.rescale)))) {
-      img.gap <- imager::imfill(x=rv$gap.size, y=height(rv$img1.crop.rescale), val = "white") %>% 
-        grayscale(.)
-      rv$composite.rescaled <- imager::imappend(list(rv$img1.crop.rescale, img.gap, rv$img2.crop.rescale), "x")
+    if (! is.null(rv$img.list.crop.rescale)) {
+      img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size)
+      rv$composite.rescaled <- imager::imappend(list(rv$img.list.crop.rescale[[1]],
+                                                     img.gap,
+                                                     rv$img.list.crop.rescale[[2]]), "x")
     } # end if
   })
   
