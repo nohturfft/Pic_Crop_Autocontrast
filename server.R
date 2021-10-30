@@ -11,9 +11,21 @@ my.crop <- function(pic, breite, start.x, start.y) {
                 y %inr% c(start.y, start.y + breite - 1))
 }
 
-make.gap <- function(image.list, gap.width) {
-  imager::imfill(x=gap.width, y=height(image.list[[1]]), z=1, val = "white") %>% 
+make.gap <- function(image.list, gap.width, gap.col="white") {
+  imager::imfill(x=gap.width, y=height(image.list[[1]]), z=1, val = gap.col) %>% 
     grayscale(.)
+}
+
+intersperse.imgs <- function(pic1, pic2, pic.gap) {
+  list(pic1, pic.gap, pic2)
+}
+
+merge.pics <- function(pic.list, pic.gap) {
+  aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
+  bb <- lapply(aa, function(y) {if (class(y)!="list") list(y) else y})
+  cc <- purrr::flatten(bb)
+  stopifnot(class(cc)=="list")
+  imager::imappend(cc, "x")
 }
 
 shinyServer(function(input, output, server, session) {
@@ -84,40 +96,40 @@ shinyServer(function(input, output, server, session) {
     if (!is.null(rv$img.list.crop)) {
       rv$img.list.crop.rescale <- lapply(rv$img.list.crop, my.rescale)
     } # end if
-  })
+  }) # end observe
   
   observe({
     print("observe() - 03")
     if (! is.null(rv$img.list.crop)) {
-      img.gap <- make.gap(rv$img.list.crop, rv$gap.size)
-      rv$composite.original <- imager::imappend(list(rv$img.list.crop[[1]], img.gap, rv$img.list.crop[[2]]), "x")
+      img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
+      # rv$composite.original <- imager::imappend(list(rv$img.list.crop[[1]], img.gap, rv$img.list.crop[[2]]), "x")
+      rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
     } # end if
-  })
+  }) # end observe
   
   observe({
     print("observe() - 04")
     if (! is.null(rv$img.list.crop.rescale)) {
-      img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size)
-      rv$composite.rescaled <- imager::imappend(list(rv$img.list.crop.rescale[[1]],
-                                                     img.gap,
-                                                     rv$img.list.crop.rescale[[2]]), "x")
+      # browser()
+      img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
+      rv$composite.rescaled <- merge.pics(rv$img.list.crop.rescale, img.gap)
+      dummy <- 1
     } # end if
-  })
-  
+  }) # end observe
   
   output$plot1 <- renderPlot({
     print("output$plot1")
     if (!is.null(rv$composite.original)) {
-      plot(rv$composite.original, rescale=FALSE)
-    }
-  })
+      plot(rv$composite.original, rescale=FALSE, main="Originals")
+    } # end if
+  }) # end renderPlot
   
   output$plot2 <- renderPlot({
     print("output$plot2")
     if (!is.null(rv$composite.rescaled)) {
-      plot(rv$composite.rescaled, rescale=FALSE)
-    }
-  })
+      plot(rv$composite.rescaled, rescale=FALSE, main="Autocontrast")
+    } # end if
+  }) # end renderPlot
   
   # Respond to Quit button
   observeEvent(input$navbar, {
