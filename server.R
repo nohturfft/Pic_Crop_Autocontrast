@@ -1,6 +1,14 @@
+#-------------------------------------------------------------------------------!
+# Packages 
+#-------------------------------------------------------------------------------!
 library(shiny)
 library(imager)
+library(magrittr)
+requireNamespace("purrr")
 
+#-------------------------------------------------------------------------------!
+# Functions
+#-------------------------------------------------------------------------------!
 my.rescale <- function(imge) {
   (imge - min(imge)) / (max(imge) - min(imge))
 }
@@ -28,16 +36,12 @@ merge.pics <- function(pic.list, pic.gap) {
   imager::imappend(cc, "x")
 }
 
+#-------------------------------------------------------------------------------!
+# Server code
+#-------------------------------------------------------------------------------!
 shinyServer(function(input, output, server, session) {
-  # browser()
   rv <- reactiveValues(
     files = NULL,
-    img1 = NULL,
-    img1.crop = NULL,
-    img1.crop.rescale = NULL,
-    img2 = NULL,
-    img2.crop = NULL,
-    img2.crop.rescale = NULL,
     composite.original = NULL,
     composite.rescaled = NULL,
     crop.x = 1,
@@ -53,8 +57,6 @@ shinyServer(function(input, output, server, session) {
     print("observeEvent(input$files)")
     rv$files <- input$files
     # Load images from file:
-    rv$img1 <- imager::load.image(rv$files$datapath[1])
-    rv$img2 <- imager::load.image(rv$files$datapath[2])
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
   })
   
