@@ -4,6 +4,8 @@
 library(shiny)
 library(imager)
 library(magrittr)
+library(rhandsontable)
+library(EBImage)
 requireNamespace("purrr")
 requireNamespace("EBImage")
 
@@ -37,6 +39,8 @@ merge.pics <- function(pic.list, pic.gap) {
   imager::imappend(cc, "x")
 }
 
+color.choices <- c("Grayscale", "Green", "Blue", "Red")
+
 #-------------------------------------------------------------------------------!
 # Server code
 #-------------------------------------------------------------------------------!
@@ -57,17 +61,24 @@ shinyServer(function(input, output, server, session) {
   )
   
   observeEvent(input$files, {
+    # browser()
     print("observeEvent(input$files)")
     rv$files <- input$files # data frame
     rv$color.list <- rep("grayscale", nrow(rv$files))
+    
+    output$hot <- renderRHandsontable({
+      rhot <- data.frame(Pic = seq_len(nrow(rv$files)), Color = color.choices[1]) %>%
+        rhandsontable(selectCallback = TRUE, useTypes = FALSE, overflow = "visible",
+                      highlightCol = TRUE, highlightRow = TRUE, rowHeaders=NULL, width=400) %>%
+        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter") %>% 
+        hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices,
+                halign = "htLeft")
+      rhot
+    }) # end renderRHandsontable
+    
     # Load images from file:
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
-    # Generate ui dropdown buttons for color choice:
-    output$colorchoosers <- renderUI ({
-      lapply(seq_len(nrow(rv$files)), function(i) {
-        selectInput(paste0("id_", i), paste("Label", i), choices=c("Grayscale", "Green", "Blue", "Red"))
-      })
-    })
+    
   })
   
   observeEvent(input$size,  {
@@ -107,7 +118,6 @@ shinyServer(function(input, output, server, session) {
     print("observe() - 02")
     if (!is.null(rv$img.list.crop)) {
       rv$img.list.crop.rescale <- lapply(rv$img.list.crop, my.rescale)
-      # rv$tmp <- EBImage::rgbImage(green=rv$img.list.crop.rescale[[2]])
     } # end if
   }) # end observe
   
@@ -126,9 +136,53 @@ shinyServer(function(input, output, server, session) {
       img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
       # Make composite image
       rv$composite.rescaled <- merge.pics(rv$img.list.crop.rescale, img.gap)
-      
     } # end if
   }) # end observe
+  
+  observeEvent(input$hot, {
+    # browser()
+    # Respond to changes in color choice table
+    print("observeEvent() - 05")
+    if (!is.null(input$hot)) {
+      # Get row selected:
+      hot.row <- input$hot_select$select$r
+      if (!is.null(hot.row)) {
+        print(paste("Row / image:", hot.row))
+        color.selected <- input$hot$changes$changes[[1]][[4]]
+        print(paste("Color chosen:", color.selected))
+        if (color.selected == "Grayscale") {
+          rv$img.list.crop.rescale[[hot.row]] <- grayscale(rv$img.list.crop.rescale[[hot.row]])
+        } else if (color.selected == "Red") {
+          a <- grayscale(rv$img.list.crop.rescale[[hot.row]])
+          print(dim(a))
+          b <- EBImage::rgbImage(red=rv$img.list.crop.rescale[[hot.row]])
+          print(dim(b))
+          c <- as.array(b)
+          print(dim(c))
+          if (length(dim(c)) == 4) {
+            d <- c
+          } else if (length(dim(c) == 5)) {
+            d <- abind::adrop(c[,,,1,,drop=FALSE], drop=4)
+          } else {
+            stop("Unexpected number of image dimesnsions")
+          }
+          print(dim(d))
+          e <- as.cimg(d)
+          rv$img.list.crop.rescale[[hot.row]] <- e
+          rv$tmp <- b
+        } else if (color.selected == "Green") {
+          rv$img.list.crop.rescale[[hot.row]] <- grayscale(rv$img.list.crop.rescale[[hot.row]])
+          rv$img.list.crop.rescale[[hot.row]] <- EBImage::rgbImage(green=rv$img.list.crop.rescale[[hot.row]])
+        } else if (color.selected == "Blue") {
+          rv$img.list.crop.rescale[[hot.row]] <- grayscale(rv$img.list.crop.rescale[[hot.row]])
+          rv$img.list.crop.rescale[[hot.row]] <- EBImage::rgbImage(blue=rv$img.list.crop.rescale[[hot.row]])
+        } # end if
+        dummy <- 1
+      } # end if
+      dummy <- 1
+    } # end if
+    dummy <- 1
+  }) # end observeEvent(input$hot)
   
   output$plot1 <- renderPlot({
     print("output$plot1")
@@ -137,19 +191,26 @@ shinyServer(function(input, output, server, session) {
     } # end if
   }) # end renderPlot
   
-  output$plot2 <- renderPlot({
+  # output$plot2 <- renderPlot({
+  #   print("output$plot2")
+  #   if (!is.null(rv$composite.rescaled)) {
+  #     plot(rv$composite.rescaled, rescale=FALSE, main="Autocontrast")
+  #   } # end if
+  # }) # end renderPlot
+  
+  output$plot2 <- renderDisplay({
     print("output$plot2")
     if (!is.null(rv$composite.rescaled)) {
-      plot(rv$composite.rescaled, rescale=FALSE, main="Autocontrast")
+      display(as.Image(rv$composite.rescaled))
     } # end if
   }) # end renderPlot
   
-  # output$plot3 <- renderPlot({
-  #   print("output$plot3")
-  #   if (!is.null(rv$tmp)) {
-  #     plot(rv$tmp, rescale=FALSE)
-  #   } # end if
-  # }) # end renderPlot
+  output$plot3 <- renderDisplay({
+    print("output$plot3")
+    if (!is.null(rv$tmp)) {
+      display(rv$tmp, rescale=FALSE)
+    } # end if
+  }) # end renderPlot
   
   # Respond to Quit button
   observeEvent(input$navbar, {
