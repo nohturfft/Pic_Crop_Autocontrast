@@ -1,9 +1,11 @@
 library(shiny)
 library(rhandsontable)
 library(shinyjs)
+library(EBImage)
 
 shinyUI(
   navbarPage(
+    theme = "styles.css",
     id="navbar",
     title = "Crop and Autocontrast",
     tabPanel(
@@ -18,19 +20,12 @@ shinyUI(
                checkboxInput("check_gap", "Insert a gap", TRUE),
                conditionalPanel(
                  condition = "input.check_gap == 1",
-                 tags$head(
-                   tags$style(type="text/css",
-                              "#inline label{ display: table-cell; text-align: center; vertical-align: middle; } 
-                #inline .form-group { display: table-row;}")
-                 ),
                 tags$div(id = "inline", class="x", numericInput('gap', 'Gap size:', 15, min = 0, max = 100)),
-                # tags$div(id = "colorchoosers") # will be replaced with dropdown lists
-                uiOutput("colorchoosers")
-               )
-               
+               ), # end conditionalPanel
+               rHandsontableOutput("hot")
         ), # end column
         column(width=8,
-               plotOutput("plot3"),
+               # displayOutput("plot3"),
                plotOutput("plot1"),
                plotOutput("plot2")
         ) # end column
