@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Combining several image into composite:
+
+* magick::image_append
+* imager::imappend
+* EBImage::abind
+
+
+4. Add false color - EBImage::rgbImage (input = imager/cimg)
+
+```{r}
+help(package="magick")
+help(package="imager")
+help(package="EBImage")
+```
+
+
+```{r}
+library(magick)
+```
+
+```{r}
+# getwd()
+# list.files("..")
+# fil <- "../ANG242_2021_10_22_20x_Well_1_Field_5_BF.png"
+fil <- "../ANG242_2021_10_22_20x_Well_1_Field_5_GFP.png"
+# file.exists(fil)
+img <- magick::image_read(fil)
+plot(img)
+```
+
+```{r}
+dim(img) # NULL
+class(img) # "magick-image"
+min(img)
+```
+
+```{r}
+img.crop <- magick::image_crop(img, "500x500+100")
+plot(img.crop)
+```
+
+```{r}
+magick::image_write(img.crop, path="cropped.png", format="png")
+```
+
+```{r}
+magick::image_info(img.crop)
+```
+```{r}
+magick::image_data(img.crop)
+```
+
+```{r}
+magick::analysis(img.crop)
+```
+
+
+```{r}
+pic.imager <- imager::magick2cimg(img.crop)
+crop.min <- min(pic.imager) %>% multiply_by(100) %>% ceiling(.)
+crop.max <- max(pic.imager) %>% multiply_by(100) %>% floor(.)
+crop.min
+crop.max
+rm(pic.imager)
+```
+
+
+```{r}
+img.con <- magick::image_level(img.crop,
+                               black_point = crop.min,
+                               white_point = crop.max,
+                               mid_point = 1,
+                               channel = NULL)
+plot(img.con)
+```
+
+```{r}
+class(img.con)
+```
+
+```{r}
+magick::image_append(c(img.con, img.con)) %>% plot
+```
+
+
+```{r}
+tmp.1 <- imager::magick2cimg(img.con)
+plot(tmp.1)
+```
+
+```{r}
+range(tmp.1)
+```
+
+```{r}
+class(tmp.1)
+```
+
+
+```{r color_scale, fig.height=1.5}
+tmp.2 <- EBImage::rgbImage(red=tmp.1)
+plot(tmp.2)
+```
+
+```{r}
+class(tmp.2)
+```
+
+```{r}
+# plot(magick::image_append(c(tmp.2, tmp.2)))
+x <- EBImage::as.Image(tmp.1)
+y <- EBImage::toRGB(x)
+class(y)
+combo <- EBImage::abind(y, tmp.2, along=1)
+display(combo)
+plot(combo, all = TRUE)
+```
+
+```{r}
+EBImage::writeImage(x = combo, files="delete.png", type="png")
+```
+
+
+```{r}
+# class(y)
+# class(tmp.2)
+kachel <- EBImage::tile(x=list(y, tmp.2), nx=2)
+display(kachel, all=TRUE)
+```
+
+
+
+```{r}
+# Back to imager format... (then back to magick) - how ?
+```
+
+
+
+
