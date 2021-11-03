@@ -1,13 +1,16 @@
 #-------------------------------------------------------------------------------!
 # Packages 
 #-------------------------------------------------------------------------------!
+library(BiocManager)
+options(repos = BiocManager::repositories())
+library(magick)
+library(EBImage)
 library(shiny)
 library(imager)
 library(magrittr)
 library(rhandsontable)
-# library(EBImage)
-requireNamespace("purrr")
-requireNamespace("EBImage")
+library(purrr)
+
 
 #-------------------------------------------------------------------------------!
 # Functions

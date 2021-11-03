@@ -1,7 +1,15 @@
+#-------------------------------------------------------------------------------!
+library(BiocManager)
+options(repos = BiocManager::repositories())
+library(magick)
+library(EBImage)
 library(shiny)
 library(rhandsontable)
 library(shinyjs)
-library(EBImage)
+library(purrr)
+library(shiny)
+library(imager)
+
 
 shinyUI(
   navbarPage(
