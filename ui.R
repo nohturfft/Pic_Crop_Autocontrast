@@ -22,7 +22,9 @@ shinyUI(
                  condition = "input.check_gap == 1",
                 tags$div(id = "inline", class="x", numericInput('gap', 'Gap size:', 15, min = 0, max = 100)),
                ), # end conditionalPanel
-               rHandsontableOutput("hot")
+               rHandsontableOutput("hot"),
+               tags$p(""),
+               downloadButton("download", "Download composite")
         ), # end column
         column(width=8,
                # displayOutput("plot3"),

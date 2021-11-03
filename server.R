@@ -192,6 +192,16 @@ shinyServer(function(input, output, server, session) {
     } # end if
   }) # end observe
   
+  output$download <- downloadHandler(
+    filename = function () {
+      a <- "composite.png"
+      a
+    },
+    content = function(file) {
+      EBImage::writeImage(x=rv$composite.rescaled, files=file, type="png")
+    }
+  )
+  
   output$plot1 <- renderPlot({
     # Plot cropped images ####
     print("output$plot1")
