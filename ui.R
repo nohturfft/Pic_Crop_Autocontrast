@@ -22,6 +22,8 @@ shinyUI(
       fluidPage(
         column(width=4,
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
+               rHandsontableOutput("hot_files"),
+               tags$p(""),
                # imageOutput("original_pic"),
                numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
                numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),

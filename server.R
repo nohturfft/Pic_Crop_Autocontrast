@@ -102,7 +102,15 @@ shinyServer(function(input, output, server, session) {
     rv$files <- input$files # data frame
     rv$color.list <- rep("grayscale", nrow(rv$files))
     
-    output$hot <- renderRHandsontable({
+    output$hot_files <- renderRHandsontable({
+      fhot <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name)) %>% 
+        rhandsontable(overflow = "visible", rowHeaders=NULL, width=400) %>% 
+        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter") %>% 
+        hot_col(col="File", readOnly = TRUE, halign = "htLeft")
+      fhot
+    })
+    
+    output$hot_colors <- renderRHandsontable({
       rhot <- data.frame(Pic = seq_len(nrow(rv$files)), Color = color.choices[1]) %>%
         rhandsontable(selectCallback = TRUE, useTypes = FALSE, overflow = "visible",
                       highlightCol = TRUE, highlightRow = TRUE, rowHeaders=NULL, width=400) %>%
