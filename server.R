@@ -168,7 +168,7 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Autocontrast ####
-    print("observe() - 02 (Autocontrast)")
+    print("observe() - 02 (Autocontrast + color)")
     if (!is.null(rv$img.list.crop)) {
       tmp <- lapply(rv$img.list.crop, my.rescale)
       rv$img.list.crop.rescale <- lapply(seq_along(rv$img.list.crop), function(i) {
@@ -187,21 +187,21 @@ shinyServer(function(input, output, server, session) {
     } # end if
   }) # end observe
   
-  observeEvent(input$hot, {
+  observeEvent(input$hot_colors, {
     # Add color ####
     print("observe() - 04 (Add color)")
     # Respond to changes in color choice table
-    if (!is.null(input$hot)) {
+    if (!is.null(input$hot_colors$changes$changes)) {
       # Get row selected:
-      hot.row <- input$hot_select$select$r
+      hot.row <- input$hot_colors_select$select$r
       if (!is.null(hot.row)) {
         print(paste("Row / image:", hot.row))
-        color.selected <- input$hot$changes$changes[[1]][[4]]
+        color.selected <- input$hot_colors$changes$changes[[1]][[4]]
         print(paste("Color chosen:", color.selected))
         rv$color.list[hot.row] <- color.selected
       } # end if
     } # end if
-  }) # end observeEvent(input$hot)
+  }) # end observeEvent(input$hot_colors)
   
   observe({
     # Composite of final images ####
