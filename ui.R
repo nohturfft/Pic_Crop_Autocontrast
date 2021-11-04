@@ -22,6 +22,7 @@ shinyUI(
       fluidPage(
         column(width=4,
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
+               # imageOutput("original_pic"),
                numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
                numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),

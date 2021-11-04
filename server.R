@@ -11,6 +11,9 @@ library(magrittr)
 library(rhandsontable)
 library(purrr)
 
+# help(package="EBImage")
+# help(package="imager")
+# help(package="magick")
 
 #-------------------------------------------------------------------------------!
 # Functions
@@ -85,6 +88,7 @@ shinyServer(function(input, output, server, session) {
     crop.y = 1,
     crop.size = 500,
     gap.size = 15,
+    overview = NULL,
     img.list = NULL,
     img.list.crop = NULL,
     img.list.crop.rescale = NULL,
@@ -108,8 +112,21 @@ shinyServer(function(input, output, server, session) {
       rhot
     }) # end renderRHandsontable
     
-    # Load images from file:
+    # Load images from file: ####
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
+    # rv$overview <- magick::image_read(rv$files$datapath[1])
+    
+    # rv$overview <- rv$img.list[[1]]
+    # rv$overview <- imager::draw_rect(rv$img.list[[1]],
+    #                                  x0 = rv$crop.x,
+    #                                  y0 = rv$crop.y + crop.size - 1,
+    #                                  x1 = rv$crop.x + crop.size - 1,
+    #                                  y1 = rv$crop.y, color="red")
+    # rv$overview <- imager::draw_rect(rv$img.list[[1]],
+    #                                  x0 = 1,
+    #                                  y0 = 500,
+    #                                  x1 = 500,
+    #                                  y1 = 1)
     
   })
   
@@ -204,6 +221,16 @@ shinyServer(function(input, output, server, session) {
       EBImage::writeImage(x=rv$composite.rescaled, files=file, type="png")
     }
   )
+  
+  # output$original_pic <- renderImage({
+  #   # Plot final images ####
+  #   # print("output$original_pic")
+  #   if (!is.null(rv$overview)) {
+  #     # rv$overview
+  #     tmpfile <- magick::image_write(rv$overview, tempfile(fileext='png'), format='png')
+  #     list(src = tmpfile, contentType = "image/png")
+  #   } # end if
+  # }, deleteFile=TRUE) # end renderImage
   
   output$plot1 <- renderPlot({
     # Plot cropped images ####
