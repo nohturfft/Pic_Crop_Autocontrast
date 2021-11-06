@@ -131,3 +131,11 @@ x <- my.draw.rect2(pic2, 500, 200, 500, 20)
 plot(x)
 ```
 
+## Resize:
+```{r}
+(new.width <- 800)
+(new.height <- round(((new.width / imager::width(x)) * imager::height(x)), 0))
+pic.small <- imager::resize(x, size_x = new.width, size_y=new.height)
+plot(pic.small)
+```
+
