@@ -4,17 +4,37 @@ ID selector: hash "#"
 Class selector: full stop "."
 ------------------------------------------------------*/
 /*
-#div_colors h3 {
-  color: red;
-}
-
- 
 div {    
  border: 2px solid red;  
  }
-
-
-div#plot_overview {
-  text-align: left;
-}
  */
+ 
+.well {
+  padding: 10px;
+}
+ 
+#selection_well .form-group {
+  display: table-row;
+}
+
+#selection_well label.control-label {
+  display: table-cell;
+  text-align: left;
+  vertical-align: middle;
+  padding: 0 10px 0 0;
+  width: 50%;
+}
+
+
+
+#composite_well .form-group {
+  display: table-row;
+}
+
+#composite_well label.control-label {
+  display: table-cell;
+  text-align: left;
+  vertical-align: middle;
+  padding: 0 0 0 0;
+  width: 50%;
+}
