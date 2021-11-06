@@ -28,6 +28,7 @@ shinyUI(
                numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
                numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),
+               plotOutput("plot_overview"),
                checkboxInput("check_gap", "Insert a gap", TRUE),
                conditionalPanel(
                  condition = "input.check_gap == 1",
