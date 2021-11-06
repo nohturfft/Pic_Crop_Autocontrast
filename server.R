@@ -110,8 +110,8 @@ shinyServer(function(input, output, server, session) {
     color.list = NULL
     # tmp = NULL
   )
-  # browser()
   
+  # input$files
   observeEvent(input$files, {
     # browser()
     print("observeEvent(input$files)")
@@ -141,28 +141,50 @@ shinyServer(function(input, output, server, session) {
     
   }) # end observeEvent(input$files)
   
+  # input$size ####
   observeEvent(input$size,  {
     print("observeEvent(input$size)")
     rv$crop.size <- input$size
     print(rv$size)
   })
   
+  # input$coord.x ####
   observeEvent(input$coord.x,  {
     print("observeEvent(input$coord.x)")
     rv$crop.x <- input$coord.x
     print(rv$crop.x)
   })
   
+  # input$coord.y ####
   observeEvent(input$coord.y,  {
     print("observeEvent(input$coord.y)")
     rv$crop.y <- input$coord.y
     print(rv$crop.y)
   })
   
+  # input$gap ####
   observeEvent(input$gap, {
     print("observeEvent(input$gap)")
     rv$gap.size <- input$gap
     print(paste("New gap:", rv$gap.size))
+  })
+  
+  # input$img_click ####
+  observeEvent(input$img_click, {
+    print("observeEvent(input$img_click)")
+    # browser()
+    click.x <- input$img_click$x
+    click.y <- input$img_click$y
+    x.max <- input$img_click$domain$right
+    y.max <- input$img_click$domain$bottom
+    top.left.x <- round(imager::width(isolate(rv$img.list[[1]])) * ( click.x / x.max), 0)
+    print(paste("top.left.x", top.left.x))
+    top.left.y <- round(imager::height(isolate(rv$img.list[[1]])) * ( click.y / y.max), 0)
+    print(paste("top.left.y", top.left.y))
+    
+    updateNumericInput(session=session, "coord.x", value = top.left.x)
+    updateNumericInput(session=session, "coord.y", value = top.left.y)
+    print("   ... done here.")
   })
   
   observe({
@@ -178,6 +200,8 @@ shinyServer(function(input, output, server, session) {
         # Plot overview ####
         new.width <- 400
         new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
+        # print("Overview image - width:", new.width)
+        # print("Overview image - height:", new.height)
         rv$overview <- rv$img.list[[1]] %>%
           imager::add.color() %>%
           my.draw.rect2(., x.top.left=rv$crop.x,
@@ -273,6 +297,7 @@ shinyServer(function(input, output, server, session) {
       plot(rv$composite.rescaled, all=TRUE)
     } # end if
   }) # end renderPlot
+  
   
   # Respond to Quit button
   observeEvent(input$navbar, {

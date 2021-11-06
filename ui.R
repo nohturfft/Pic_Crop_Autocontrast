@@ -28,7 +28,8 @@ shinyUI(
                numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
                numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),
-               plotOutput("plot_overview", width="400px", height="260px"), #  , , height="200px"
+               plotOutput("plot_overview", width="400px", height="260px", click = "img_click"),
+               verbatimTextOutput("click_info"),
                checkboxInput("check_gap", "Insert a gap", TRUE),
                conditionalPanel(
                  condition = "input.check_gap == 1",
