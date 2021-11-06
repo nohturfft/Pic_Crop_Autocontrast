@@ -138,17 +138,6 @@ shinyServer(function(input, output, server, session) {
     
     # Load images from file: ####
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
-    # rv$overview <- magick::image_read(rv$files$datapath[1])
-    
-    # Plot overview ####
-    # new.width <- 400
-    # new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
-    # rv$overview <- rv$img.list[[1]] %>%
-    #   imager::add.color() %>%
-    #   my.draw.rect2(., x.top.left=isolate(rv$crop.x),
-    #                 y.top.left=isolate(rv$crop.y),
-    #                 width=isolate(rv$crop.size), stroke=20) %>%
-    #   imager::resize(., size_x = new.width, size_y=new.height)
     
   }) # end observeEvent(input$files)
   
