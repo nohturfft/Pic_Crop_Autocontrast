@@ -3,11 +3,18 @@ CSS
 ID selector: hash "#"
 Class selector: full stop "."
 ------------------------------------------------------*/
-
-h3 {
-  color: red;
-}
-
+/*
 #div_colors h3 {
   color: red;
 }
+
+ 
+div {    
+ border: 2px solid red;  
+ }
+
+
+div#plot_overview {
+  text-align: left;
+}
+ */

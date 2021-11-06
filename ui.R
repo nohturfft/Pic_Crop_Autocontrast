@@ -21,14 +21,14 @@ shinyUI(
       title = "Main",
       fluidPage(
         column(width=4,
+               align="left",
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
                rHandsontableOutput("hot_files"),
                tags$p(""),
-               # imageOutput("original_pic"),
                numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
                numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),
-               plotOutput("plot_overview"),
+               plotOutput("plot_overview", width="400px", height="260px"), #  , , height="200px"
                checkboxInput("check_gap", "Insert a gap", TRUE),
                conditionalPanel(
                  condition = "input.check_gap == 1",

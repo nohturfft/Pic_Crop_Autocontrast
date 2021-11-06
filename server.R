@@ -18,6 +18,21 @@ library(purrr)
 #-------------------------------------------------------------------------------!
 # Functions
 #-------------------------------------------------------------------------------!
+my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
+  # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
+  stopifnot(imager::spectrum(img) == 3)
+  tmp <- img
+  # Horizontal line top:
+  tmp[x.top.left:(x.top.left+width-1), y.top.left:(y.top.left+stroke-1), 1, 1] <- 1
+  # Horizontal line bottom:
+  tmp[x.top.left:(x.top.left+width-1), (y.top.left+width-stroke+1):(y.top.left+width), 1, 1] <- 1
+  # Vertical line left:
+  tmp[x.top.left:(x.top.left+stroke-1), y.top.left:(y.top.left+width-1), 1, 1] <- 1
+  # Vertical line right:
+  tmp[(x.top.left+width-stroke+1):(x.top.left+width-1), y.top.left:(y.top.left+width-1), 1, 1] <- 1
+  tmp
+}
+
 my.rescale <- function(imge) {
   (imge - min(imge)) / (max(imge) - min(imge))
 }
@@ -95,6 +110,7 @@ shinyServer(function(input, output, server, session) {
     color.list = NULL
     # tmp = NULL
   )
+  # browser()
   
   observeEvent(input$files, {
     # browser()
@@ -124,19 +140,17 @@ shinyServer(function(input, output, server, session) {
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
     # rv$overview <- magick::image_read(rv$files$datapath[1])
     
-    # rv$overview <- rv$img.list[[1]]
-    # rv$overview <- imager::draw_rect(rv$img.list[[1]],
-    #                                  x0 = rv$crop.x,
-    #                                  y0 = rv$crop.y + crop.size - 1,
-    #                                  x1 = rv$crop.x + crop.size - 1,
-    #                                  y1 = rv$crop.y, color="red")
-    # rv$overview <- imager::draw_rect(rv$img.list[[1]],
-    #                                  x0 = 1,
-    #                                  y0 = 500,
-    #                                  x1 = 500,
-    #                                  y1 = 1)
+    # Plot overview ####
+    # new.width <- 400
+    # new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
+    # rv$overview <- rv$img.list[[1]] %>%
+    #   imager::add.color() %>%
+    #   my.draw.rect2(., x.top.left=isolate(rv$crop.x),
+    #                 y.top.left=isolate(rv$crop.y),
+    #                 width=isolate(rv$crop.size), stroke=20) %>%
+    #   imager::resize(., size_x = new.width, size_y=new.height)
     
-  })
+  }) # end observeEvent(input$files)
   
   observeEvent(input$size,  {
     print("observeEvent(input$size)")
@@ -163,13 +177,25 @@ shinyServer(function(input, output, server, session) {
   })
   
   observe({
-    # Crop images ####
     print("observe() - 01")
     if (!is.null(rv$img.list)) {
       if (!any(is.na(c(rv$crop.size, rv$crop.x, rv$crop.y)))) {
+        
+        # Crop images ####
         rv$img.list.crop <- lapply(rv$img.list, function(img) {
           my.crop(img, rv$crop.size, rv$crop.x, rv$crop.y)
         })
+        
+        # Plot overview ####
+        new.width <- 400
+        new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
+        rv$overview <- rv$img.list[[1]] %>%
+          imager::add.color() %>%
+          my.draw.rect2(., x.top.left=rv$crop.x,
+                        y.top.left=rv$crop.y,
+                        width=rv$crop.size, stroke=10) %>%
+          imager::resize(., size_x = new.width, size_y=new.height)
+        
       } # end if
     } # end if
   }) # end observe
@@ -218,6 +244,7 @@ shinyServer(function(input, output, server, session) {
       img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
       rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
     } # end if
+    print("... done here.")
   }) # end observe
   
   output$download <- downloadHandler(
@@ -230,26 +257,28 @@ shinyServer(function(input, output, server, session) {
     }
   )
   
-  # output$original_pic <- renderImage({
-  #   # Plot final images ####
-  #   # print("output$original_pic")
-  #   if (!is.null(rv$overview)) {
-  #     # rv$overview
-  #     tmpfile <- magick::image_write(rv$overview, tempfile(fileext='png'), format='png')
-  #     list(src = tmpfile, contentType = "image/png")
-  #   } # end if
-  # }, deleteFile=TRUE) # end renderImage
+  output$plot_overview <- renderPlot({
+    # Output overview plot ####
+    print("output$plot_overview")
+    if (!is.null(rv$overview)) {
+      par(mar=c(0,0,0,0))
+      plot(rv$overview, axes = FALSE, frame.plot=FALSE)
+    } # end if
+  }
+  ) # end renderPlot
   
   output$plot1 <- renderPlot({
-    # Plot cropped images ####
+    # Output plot cropped images ####
     print("output$plot1")
     if (!is.null(rv$composite.original)) {
-      plot(rv$composite.original, rescale=FALSE, main="Originals")
+      par(mar=c(0,0,0,0))
+      plot(rv$composite.original, rescale=FALSE, main="Originals", axes=FALSE)
     } # end if
-  }) # end renderPlot
+  }
+  ) # end renderPlot
   
   output$plot2 <- renderPlot({
-    # Plot final images ####
+    # Output plot final images ####
     print("output$plot2 (Plot final images)")
     if (!is.null(rv$composite.rescaled)) {
       plot(rv$composite.rescaled, all=TRUE)
