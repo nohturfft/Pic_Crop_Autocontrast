@@ -6,6 +6,7 @@ options(repos = BiocManager::repositories())
 library(magick)
 library(EBImage)
 library(shiny)
+library(shinyjs)
 library(imager)
 library(magrittr)
 library(rhandsontable)
@@ -54,17 +55,15 @@ intersperse.imgs <- function(pic1, pic2, pic.gap) {
 
 merge.pics <- function(pic.list, pic.gap) {
   aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
-  bb <- lapply(aa, function(y) {if (class(y)!="list") list(y) else y})
+  bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
   cc <- purrr::flatten(bb)
   stopifnot(class(cc)=="list")
   imager::imappend(cc, "x")
 }
 
-# EBImage::as.Image(tmp.1)
-# EBImage::toRGB(x)
 compose.pics <- function(pic.list, pic.gap) {
   aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
-  bb <- lapply(aa, function(y) {if (class(y)!="list") list(y) else y})
+  bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
   cc <- purrr::flatten(bb)
   dd <- lapply(cc, EBImage::as.Image)
   ee <- lapply(dd, EBImage::toRGB)
@@ -115,14 +114,15 @@ shinyServer(function(input, output, server, session) {
   observeEvent(input$files, {
     # browser()
     print("observeEvent(input$files)")
+    hide("download")
     rv$files <- input$files # data frame
     rv$color.list <- rep("grayscale", nrow(rv$files))
     
     output$hot_files <- renderRHandsontable({
       fhot <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name)) %>% 
         rhandsontable(overflow = "visible", rowHeaders=NULL, width=400) %>% 
-        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter") %>% 
-        hot_col(col="File", readOnly = TRUE, halign = "htLeft")
+        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
+        hot_col(col="File", readOnly = TRUE, halign = "htLeft", format="text")
       fhot
     })
     
@@ -130,7 +130,7 @@ shinyServer(function(input, output, server, session) {
       rhot <- data.frame(Pic = seq_len(nrow(rv$files)), Color = color.choices[1]) %>%
         rhandsontable(selectCallback = TRUE, useTypes = FALSE, overflow = "visible",
                       highlightCol = TRUE, highlightRow = TRUE, rowHeaders=NULL, width=400) %>%
-        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter") %>% 
+        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
         hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices,
                 halign = "htLeft")
       rhot
@@ -208,7 +208,7 @@ shinyServer(function(input, output, server, session) {
                         y.top.left=rv$crop.y,
                         width=rv$crop.size, stroke=10) %>%
           imager::resize(., size_x = new.width, size_y=new.height)
-        
+        show("plot_overview")
       } # end if
     } # end if
   }) # end observe
@@ -253,11 +253,14 @@ shinyServer(function(input, output, server, session) {
   observe({
     # Composite of final images ####
     print("observe() - 05")
+    # browser()
+    # go.ahead <- is.list(rv$img.list.crop.rescale)
     if (! is.null(rv$img.list.crop.rescale)) {
       img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
       rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
+      show("download")
     } # end if
-    print("... done here.")
+    print("... done here 05.")
   }) # end observe
   
   output$download <- downloadHandler(
@@ -275,7 +278,7 @@ shinyServer(function(input, output, server, session) {
     print("output$plot_overview")
     if (!is.null(rv$overview)) {
       par(mar=c(0,0,0,0))
-      plot(rv$overview, axes = FALSE, frame.plot=FALSE)
+      plot(rv$overview, axes = FALSE)
     } # end if
   }
   ) # end renderPlot
