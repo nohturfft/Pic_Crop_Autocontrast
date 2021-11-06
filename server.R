@@ -54,17 +54,25 @@ intersperse.imgs <- function(pic1, pic2, pic.gap) {
 }
 
 merge.pics <- function(pic.list, pic.gap) {
-  aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
-  bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
-  cc <- purrr::flatten(bb)
+  if (!is.null(pic.gap)) {
+    aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
+    bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
+    cc <- purrr::flatten(bb)
+  } else {
+    cc <- pic.list
+  }
   stopifnot(class(cc)=="list")
   imager::imappend(cc, "x")
 }
 
 compose.pics <- function(pic.list, pic.gap) {
-  aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
-  bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
-  cc <- purrr::flatten(bb)
+  if (!is.null(pic.gap)) {
+    aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
+    bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
+    cc <- purrr::flatten(bb)
+  } else {
+    cc <- pic.list
+  }
   dd <- lapply(cc, EBImage::as.Image)
   ee <- lapply(dd, EBImage::toRGB)
   EBImage::abind(ee, along=1)
@@ -171,6 +179,15 @@ shinyServer(function(input, output, server, session) {
     print(paste("New gap:", rv$gap.size))
   })
   
+  observeEvent(input$check_gap, {
+    if (input$check_gap == FALSE) {
+      rv$gap.size <- 0
+    } else {
+      updateNumericInput(session=session, inputId = "gap", value=15)
+      rv$gap.size <- 15
+    }
+  })
+  
   # input$img_click ####
   observeEvent(input$img_click, {
     print("observeEvent(input$img_click)")
@@ -230,9 +247,14 @@ shinyServer(function(input, output, server, session) {
     # Composite cropped images ####
     print("observe() - 03 (Composite cropped images)")
     if (! is.null(rv$img.list.crop)) {
-      img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
-      # Make composite image
-      rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
+      if (rv$gap.size > 0) {
+        img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
+        # Make composite image
+        rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
+      } else {
+        rv$composite.original <- merge.pics(rv$img.list.crop, pic.gap=NULL)
+      }
+      
       show("div_plot_originals")
     } # end if
   }) # end observe
@@ -256,9 +278,15 @@ shinyServer(function(input, output, server, session) {
   observe({
     # Composite of final images ####
     print("observe() - 05")
+    # browser()
     if (! is.null(rv$img.list.crop.rescale)) {
-      img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
-      rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
+      if (rv$gap.size > 0) {
+        img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
+        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
+      } else {
+        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL)
+      }
+      
       show("div_plot_autocontrast")
       show("download")
     } # end if
