@@ -115,6 +115,8 @@ shinyServer(function(input, output, server, session) {
     # browser()
     print("observeEvent(input$files)")
     hide("download")
+    hide("div_plot_originals")
+    hide("div_plot_autocontrast")
     rv$files <- input$files # data frame
     rv$color.list <- rep("grayscale", nrow(rv$files))
     
@@ -231,6 +233,7 @@ shinyServer(function(input, output, server, session) {
       img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
       # Make composite image
       rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
+      show("div_plot_originals")
     } # end if
   }) # end observe
   
@@ -253,11 +256,10 @@ shinyServer(function(input, output, server, session) {
   observe({
     # Composite of final images ####
     print("observe() - 05")
-    # browser()
-    # go.ahead <- is.list(rv$img.list.crop.rescale)
     if (! is.null(rv$img.list.crop.rescale)) {
       img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
       rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
+      show("div_plot_autocontrast")
       show("download")
     } # end if
     print("... done here 05.")
@@ -288,7 +290,7 @@ shinyServer(function(input, output, server, session) {
     print("output$plot1")
     if (!is.null(rv$composite.original)) {
       par(mar=c(0,0,0,0))
-      plot(rv$composite.original, rescale=FALSE, main="Originals", axes=FALSE)
+      plot(rv$composite.original, rescale=FALSE, axes=FALSE)
     } # end if
   }
   ) # end renderPlot
