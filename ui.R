@@ -48,9 +48,19 @@ shinyUI(
                hidden(downloadButton("download", "Download composite"))
         ), # end column
         column(width=8,
-               # displayOutput("plot3"),
-               plotOutput("plot1"),
-               plotOutput("plot2")
+               hidden(
+                 tags$div(id="div_plot_originals",
+                          tags$h3("Original:"),
+                          plotOutput("plot1")
+                 ) # end tags$div
+               ), # end hidden
+               hidden(
+                 tags$div(id="div_plot_autocontrast",
+                          tags$h3("Autocontrast:"),
+                          plotOutput("plot2")
+                 ) # end tags$div
+               ) # end hidden
+               
         ) # end column
       ) # end fluidPage
     ), # end TabPanel
