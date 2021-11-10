@@ -47,7 +47,7 @@ shinyUI(
                tags$p(""),
                hidden(downloadButton("download", "Download composite"))
         ), # end column
-        column(width=8,
+        column(width=9,
                hidden(
                  tags$div(id="div_plot_originals",
                           tags$h3("Original:"),
