@@ -1,0 +1,14 @@
+name: Pic_Crop_Autocontrast
+title: Pic_Crop_Autocontrast
+username:
+account: nohturfft
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5021776
+bundleId: 5201911
+url: https://nohturfft.shinyapps.io/Pic_Crop_Autocontrast/
+when: 1635841858.79954
+lastSyncTime: 1635841858.79955
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: README.md|testing/example_run.Rmd|testing/imager.Rmd|testing/magick.Rmd
