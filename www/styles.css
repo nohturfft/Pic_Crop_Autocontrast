@@ -12,10 +12,12 @@ div {
 .well {
   padding: 10px;
 }
- 
+
+/*
 #selection_well .form-group {
   display: table-row;
 }
+
 
 #selection_well label.control-label {
   display: table-cell;
@@ -24,9 +26,21 @@ div {
   padding: 0 10px 0 0;
   width: 50%;
 }
+*/
 
+.well .form-group {
+  display: table-row;
+}
 
+.well label.control-label {
+  display: table-cell;
+  text-align: left;
+  vertical-align: middle;
+  padding: 0 10px 0 0;
+  width: 50%;
+}
 
+/*
 #composite_well .form-group {
   display: table-row;
 }
@@ -38,3 +52,4 @@ div {
   padding: 0 0 0 0;
   width: 50%;
 }
+*/
