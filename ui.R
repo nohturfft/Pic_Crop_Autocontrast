@@ -40,10 +40,18 @@ shinyUI(
                          checkboxInput("check_gap", "Insert a gap", TRUE),
                          conditionalPanel(
                            condition = "input.check_gap == 1",
-                           tags$div(id = "inline", class="x", numericInput('gap', 'Gap size:', 15, min = 0, max = 100)),
+                           tags$div(id = "div_gap", class="x", numericInput('gap', 'Gap size:', 15, min = 0, max = 100)),
                          ) # end conditionalPanel
                          ),
                rHandsontableOutput("hot_colors"),
+               wellPanel(id="scalebar_well",
+                         checkboxInput("check_scalebar", "Add a scale bar", FALSE),
+                         conditionalPanel(
+                           condition = "input.check_scalebar == 1",
+                           tags$div(id = "div_scalebar", class="x",
+                                    selectInput("select_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other")),
+                                    numericInput("px_per_um", "Pixels per µm:", 100, min = 1))
+                         )),
                tags$p(""),
                hidden(downloadButton("download", "Download composite"))
         ), # end column
