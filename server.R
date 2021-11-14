@@ -233,31 +233,25 @@ shinyServer(function(input, output, server, session) {
     rv$files <- input$files # data frame
     rv$color.list <- rep("grayscale", nrow(rv$files))
     
+    # rhandsontable: files + colors ####
     output$hot_files <- renderRHandsontable({
-      fhot <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name)) %>% 
-        rhandsontable(overflow = "visible", rowHeaders=NULL, width=400) %>% 
+      fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
+        rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
+                      highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
         hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
-        hot_col(col="File", readOnly = TRUE, halign = "htLeft", format="text")
-      fhot
+        hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
+        hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
+      fhot2
     })
-    
-    output$hot_colors <- renderRHandsontable({
-      rhot <- data.frame(Pic = seq_len(nrow(rv$files)), Color = color.choices[1]) %>%
-        rhandsontable(selectCallback = TRUE, useTypes = FALSE, overflow = "visible",
-                      highlightCol = TRUE, highlightRow = TRUE, rowHeaders=NULL, width=400) %>%
-        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
-        hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices,
-                halign = "htLeft")
-      rhot
-    }) # end renderRHandsontable
+
     
     # Update radio button under selection pic:
     updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
                        inline = TRUE, selected = "Pic1")
     
     # Load images from file: ####
-    rv$img.list <- lapply(rv$files$datapath, imager::load.image)
-    
+    rv$img.list.original <- lapply(rv$files$datapath, imager::load.image)
+    rv$img.list <- rv$img.list.original
     
     
   }) # end observeEvent(input$files)
@@ -290,6 +284,7 @@ shinyServer(function(input, output, server, session) {
     print(paste("New gap:", rv$gap.size))
   })
   
+  # input$check_gap ####
   observeEvent(input$check_gap, {
     if (input$check_gap == FALSE) {
       rv$gap.size <- 0
@@ -378,21 +373,32 @@ shinyServer(function(input, output, server, session) {
     } # end if
   }) # end observe
   
-  observeEvent(input$hot_colors, {
-    # Add color ####
-    print("observe() - 04 (Add color)")
-    # Respond to changes in color choice table
-    if (!is.null(input$hot_colors$changes$changes)) {
+  # input$hot_files ####
+  observeEvent(input$hot_files, {
+    print("observeEvent() - input$hot_files")
+    if (!is.null(input$hot_files$changes$changes)) {
+      
       # Get row selected:
-      hot.row <- input$hot_colors_select$select$r
-      if (!is.null(hot.row)) {
-        print(paste("Row / image:", hot.row))
-        color.selected <- input$hot_colors$changes$changes[[1]][[4]]
-        print(paste("Color chosen:", color.selected))
-        rv$color.list[hot.row] <- color.selected
-      } # end if
-    } # end if
-  }) # end observeEvent(input$hot_colors)
+      if (!is.null(input$hot_files_select$select)) {
+        # browser()
+        hot.row <- input$hot_files_select$select$r
+        print(paste("... row selected:", hot.row))
+        hot.col <- input$hot_files_select$select$c
+        print(paste("... column selected:", hot.col))
+        if (hot.col == 2) {
+          file.selected <- input$hot_files$changes$changes[[1]][[4]]
+          print(paste("... file selected:", file.selected))
+          indx.img.selected <- which(basename(rv$files$name) == file.selected)
+          print(paste("... indx.img.selected:", indx.img.selected))
+          rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
+        } else if (hot.col == 3) {
+          color.selected <- input$hot_files$changes$changes[[1]][[4]]
+          print(paste("--- Color chosen:", color.selected))
+          rv$color.list[hot.row] <- color.selected
+        } # end if
+      }
+    }
+  })
   
   observe({
     # Composite of final images ####
