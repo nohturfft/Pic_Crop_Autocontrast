@@ -37,11 +37,14 @@ shinyUI(
                          )
                ),
                wellPanel(id="composite_well",
-                         checkboxInput("check_gap", "Insert a gap", TRUE),
-                         conditionalPanel(
-                           condition = "input.check_gap == 1",
-                           tags$div(id = "div_gap", class="x", numericInput('gap', 'Gap size:', 15, min = 0, max = 100)),
-                         ) # end conditionalPanel
+                         splitLayout(
+                           checkboxInput("check_gap", "Insert a gap", TRUE),
+                           conditionalPanel(
+                             condition = "input.check_gap == 1",
+                             tags$div(id = "div_gap", class="x", numericInput('gap', 'Size:', 15, min = 0, max = 100)),
+                           ) # end conditionalPanel
+                         ) # end splitLayout
+                         
                          ),
                rHandsontableOutput("hot_colors"),
                wellPanel(id="scalebar_well",
