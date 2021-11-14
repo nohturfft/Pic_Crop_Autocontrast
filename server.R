@@ -251,8 +251,14 @@ shinyServer(function(input, output, server, session) {
       rhot
     }) # end renderRHandsontable
     
+    # Update radio button under selection pic:
+    updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
+                       inline = TRUE, selected = "Pic1")
+    
     # Load images from file: ####
     rv$img.list <- lapply(rv$files$datapath, imager::load.image)
+    
+    
     
   }) # end observeEvent(input$files)
   
@@ -327,13 +333,20 @@ shinyServer(function(input, output, server, session) {
         new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
         # print("Overview image - width:", new.width)
         # print("Overview image - height:", new.height)
-        rv$overview <- rv$img.list[[1]] %>%
-          imager::add.color() %>%
-          my.draw.rect2(., x.top.left=rv$crop.x,
-                        y.top.left=rv$crop.y,
-                        width=rv$crop.size, stroke=10) %>%
-          imager::resize(., size_x = new.width, size_y=new.height)
-        show("plot_overview")
+        # browser()
+        if (!is.null(input$radio_overview)) {
+          print(input$radio_overview)
+          overview.indx <- input$radio_overview %>% stringr::str_remove("Pic") %>% as.numeric
+          print(paste("... overview.indx:", overview.indx))
+          rv$overview <- rv$img.list[[overview.indx]] %>%
+            imager::add.color() %>%
+            my.draw.rect2(., x.top.left=rv$crop.x,
+                          y.top.left=rv$crop.y,
+                          width=rv$crop.size, stroke=10) %>%
+            imager::resize(., size_x = new.width, size_y=new.height)
+          show("plot_overview"); show("radio_overview")
+        }
+        
       } # end if
     } # end if
   }) # end observe
