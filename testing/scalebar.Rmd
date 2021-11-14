@@ -1,0 +1,47 @@
+---
+title: "Scale bar"
+output: html_notebook
+---
+
+```{r}
+help(package="imager")
+help(package="EBImage")
+```
+
+
+```{r}
+ar <- array(rep(0, 3000), c(30, 100))
+dim(ar)
+```
+
+```{r}
+pic <- as.cimg(as.raster(ar))
+class(pic) # "cimg"         "imager_array" "numeric"    
+dim(pic) # 100  30   1   3
+```
+
+```{r}
+dim(EBImage::as.Image(pic))
+dim(EBImage::toRGB(EBImage::as.Image(pic)))
+```
+
+```{r}
+plot(EBImage::toRGB(EBImage::as.Image(pic)))
+```
+
+
+
+```{r}
+plot(pic)
+```
+
+```{r}
+pic2 <- imager::draw_rect(pic, 5, 10, 50, 20, color="white")
+plot(pic2)
+```
+
+```{r}
+pic3 <- imager::draw_text(pic2, 55, 10, "100 µm", "white", fsize = 10)
+plot(pic3)
+```
+
