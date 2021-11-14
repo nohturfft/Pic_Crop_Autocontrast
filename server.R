@@ -52,7 +52,7 @@ my.crop <- function(pic, breite, start.x, start.y) {
 
 make.gap <- function(image.list, gap.width, gap.col="white") {
   imager::imfill(x=gap.width, y=height(image.list[[1]]), z=1, val = gap.col) %>% 
-    grayscale(.)
+    imager::grayscale(.)
 }
 
 intersperse.imgs <- function(pic1, pic2, pic.gap) {
@@ -70,6 +70,7 @@ merge.pics <- function(pic.list, pic.gap) {
   stopifnot(class(cc)=="list")
   imager::imappend(cc, "x")
 }
+# debug(merge.pics)
 
 compose.pics <- function(pic.list, pic.gap) {
   if (!is.null(pic.gap)) {
@@ -81,8 +82,20 @@ compose.pics <- function(pic.list, pic.gap) {
   }
   dd <- lapply(cc, EBImage::as.Image)
   ee <- lapply(dd, EBImage::toRGB)
-  EBImage::abind(ee, along=1)
+  res <- EBImage::abind(ee, along=1)
+  res
 }
+# debug(compose.pics)
+
+compose.info <- function(pic1, pic2) {
+  
+  aa <- lapply(list(pic1, pic2), EBImage::as.Image)
+  stopifnot(imager::width(pic1) == imager::width(pic2))
+  bb <- lapply(aa, EBImage::toRGB)
+  res <- EBImage::abind(bb, along=2)
+  res
+}
+# debug(compose.info)
 
 my.false.colorise <- function(bild, farbe) {
   farbe <- tolower(farbe)
@@ -102,16 +115,29 @@ my.false.colorise <- function(bild, farbe) {
   pic
 }
 
+make.info.panel <- function(composite, hoehe, txt, ofset, farbe, padding) {
+  panel.height <- hoehe + padding + padding
+  panel.width <- imager::width(composite)
+  pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>%
+    imager::draw_text(., x=(padding+ofset), y=padding, text=txt, color="black", fsize=hoehe) %>% 
+    imager::grayscale(.)
+  pic
+}
+# debug(make.info.panel)
+
 color.choices <- c("Grayscale", "Green", "Blue", "Red")
 
 #-------------------------------------------------------------------------------!
 # Server code
 #-------------------------------------------------------------------------------!
 shinyServer(function(input, output, server, session) {
+  # Reactive values ####
   rv <- reactiveValues(
     files = NULL,
     composite.original = NULL,
     composite.rescaled = NULL,
+    info.panel = NULL,
+    composite.with.info = NULL,
     crop.x = 1,
     crop.y = 1,
     crop.size = 500,
@@ -212,6 +238,7 @@ shinyServer(function(input, output, server, session) {
     print("   ... done here.")
   })
   
+  
   observe({
     print("observe() - 01")
     if (!is.null(rv$img.list)) {
@@ -293,11 +320,40 @@ shinyServer(function(input, output, server, session) {
         rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL)
       }
       
+      if (!is.null(rv$info.panel)) {
+        print("--- Scalebar: TRUE")
+        print(class(rv$composite.rescaled)) # "EBImage" (1015  500    3    1    1)
+        print(dim(rv$composite.rescaled))
+        print(class(rv$info.panel)) # "cimg"         "imager_array" "numeric" (1015   30    1    3)
+        print(dim(rv$info.panel))
+        # tmp1 <- EBImage::as.Image(rv$info.panel)
+        # tmp2 <- EBImage::toRGB(tmp1)
+        # tmp3 <- list(rv$composite.rescaled, tmp2)
+        # rv$composite.with.info <- EBImage::abind(list(rv$composite.rescaled, rv$info.panel), along=2)
+        # rv$composite.with.info <- imager::imappend(list(rv$composite.rescaled, rv$info.panel), "y")
+        rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
+      } else {
+        print("--- Scalebar: FALSE")
+        rv$composite.with.info <- rv$composite.rescaled
+      }
+      
       show("div_plot_autocontrast")
       show("download")
     } # end if
     print("... done here 05.")
   }) # end observe
+  
+  
+  observeEvent(input$check_scalebar, {
+    # Scalebar ####
+    print("observe() - 06 - Scalebar")
+    if (input$check_scalebar == TRUE) {
+      rv$info.panel <- make.info.panel(composite=rv$composite.rescaled, hoehe=20, txt="Text here", ofset=10, farbe="x", padding=5)
+    } else {
+      rv$info.panel <- NULL
+    }
+  })
+  
   
   output$download <- downloadHandler(
     filename = function () {
@@ -333,7 +389,8 @@ shinyServer(function(input, output, server, session) {
     # Output plot final images ####
     print("output$plot2 (Plot final images)")
     if (!is.null(rv$composite.rescaled)) {
-      plot(rv$composite.rescaled, all=TRUE)
+      # plot(rv$composite.rescaled, all=TRUE)
+      plot(rv$composite.with.info, all=TRUE)
     } # end if
   }) # end renderPlot
   
