@@ -115,17 +115,80 @@ my.false.colorise <- function(bild, farbe) {
   pic
 }
 
-make.info.panel <- function(composite, hoehe, txt, ofset, farbe, padding) {
-  panel.height <- hoehe + padding + padding
+make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, padding, breite.um, px.per.um) {
+  print("Function: make.info.panel()")
+  
+  # https://en.wikipedia.org/wiki/Typeface_anatomy
+  # descender = pixels taken up by lower part of g j µ etc.
+  descender <- floor(txt.size / 5)
+  inner.height <- ifelse(txt.size > bar.height, txt.size, (bar.height + descender))
+  panel.height <- inner.height + padding + padding
+  
   panel.width <- imager::width(composite)
+  bar.width.px <- floor(breite.um * px.per.um)
+  
+  padding.top <- padding
+  
+  if (txt.size == bar.height) {
+    # Text and bar are the SAME height:
+    text.y <- padding.top + descender
+    bar.y0 <- padding + bar.height
+  } else if (bar.height > txt.size) {
+    # The bar is higher:
+    text.y <- padding.top + descender + (bar.height - txt.size)
+    bar.y0 <- padding + bar.height
+  } else {
+    # The text is higher:
+    text.y <- padding.top #+ descender
+    bar.y0 <- text.y + txt.size - descender
+  }
+  bar.y1 <- bar.y0 - bar.height
+  
+  print(paste("... panel.width:", panel.width))
+  print(paste("... panel.height:", panel.height))
+  print(paste("... bar.height:", bar.height))
+  print(paste("... txt.size:", txt.size))
+  print(paste("... inner.height:", inner.height))
+  print(paste("... bar.width.px:", bar.width.px))
+  print(paste("... descender:", descender))
+  print(paste("... padding:", padding))
+  print(paste("... padding.top:", padding.top))
+  print(paste("... panel.height:", panel.height))
+  print(paste("... text.y:", text.y))
+  print(paste("... bar.y0:", bar.y0))
+  print(paste("... bar.y1:", bar.y1))
+  
+  
+  
   pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>%
-    imager::draw_text(., x=(padding+ofset), y=padding, text=txt, color="black", fsize=hoehe) %>% 
+    # draw_rect: y0 measures from top, refers to BOTTOM edge of rectangle (y1 = top)
+    imager::draw_rect(., x0 = ofset, x1 = (ofset + bar.width.px), y0 = bar.y0, y1 = bar.y1, color = farbe) %>% 
+    # draw_txt: y measures from top, refers to TOP edge of text
+    imager::draw_text(., x=(ofset + bar.width.px + bar.height),
+                      y=text.y,
+                      text=paste(breite.um, "um"), color="black", fsize=txt.size) %>% 
     imager::grayscale(.)
   pic
 }
 # debug(make.info.panel)
 
+# Defaults ####
 color.choices <- c("Grayscale", "Green", "Blue", "Red")
+mic.objectives <- c("4x", "10x", "20x", "40x", "Other")
+pixels.per.micron <- c(0.687, 3.424, 6.895) %>% 
+  magrittr::set_names(c("4x", "20x", "40x"))
+scalebar.color.choices <- c("white", "black")
+
+parameters.scalebar <- list(
+  bar.height = 12,
+  text.height = 26,
+  bar.width.um = 20,
+  objective = mic.objectives[3],
+  px.per.um = 3.424,
+  padding = 10,
+  bar.color = scalebar.color.choices[2],
+  bar.offset = 20
+)
 
 #-------------------------------------------------------------------------------!
 # Server code
@@ -146,9 +209,19 @@ shinyServer(function(input, output, server, session) {
     img.list = NULL,
     img.list.crop = NULL,
     img.list.crop.rescale = NULL,
-    color.list = NULL
-    # tmp = NULL
+    color.list = NULL,
+    param_scalebar = parameters.scalebar
   )
+  
+  # ui input defaults ####
+  updateSelectInput(session=session, "scalebar_objective", choices = mic.objectives, selected=mic.objectives[3])
+  updateNumericInput(session=session, "scalebar_px_per_um", value = parameters.scalebar$px.per.um)
+  updateNumericInput(session=session, "scalebar_microns", value = parameters.scalebar$bar.width)
+  updateNumericInput(session=session, "scalebar_height", value = parameters.scalebar$bar.height)
+  updateNumericInput(session=session, "scalebar_txt_height", value = parameters.scalebar$text.height)
+  updateNumericInput(session=session, "scalebar_padding", value = parameters.scalebar$padding)
+  updateSelectInput(session=session, "scalebar_color", choices = scalebar.color.choices, selected=scalebar.color.choices[2])
+  updateNumericInput(session=session, "scalebar_offset", value = parameters.scalebar$bar.offset)
   
   # input$files
   observeEvent(input$files, {
@@ -326,11 +399,6 @@ shinyServer(function(input, output, server, session) {
         print(dim(rv$composite.rescaled))
         print(class(rv$info.panel)) # "cimg"         "imager_array" "numeric" (1015   30    1    3)
         print(dim(rv$info.panel))
-        # tmp1 <- EBImage::as.Image(rv$info.panel)
-        # tmp2 <- EBImage::toRGB(tmp1)
-        # tmp3 <- list(rv$composite.rescaled, tmp2)
-        # rv$composite.with.info <- EBImage::abind(list(rv$composite.rescaled, rv$info.panel), along=2)
-        # rv$composite.with.info <- imager::imappend(list(rv$composite.rescaled, rv$info.panel), "y")
         rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
       } else {
         print("--- Scalebar: FALSE")
@@ -344,24 +412,60 @@ shinyServer(function(input, output, server, session) {
   }) # end observe
   
   
-  observeEvent(input$check_scalebar, {
-    # Scalebar ####
-    print("observe() - 06 - Scalebar")
-    if (input$check_scalebar == TRUE) {
-      rv$info.panel <- make.info.panel(composite=rv$composite.rescaled, hoehe=20, txt="Text here", ofset=10, farbe="x", padding=5)
-    } else {
-      rv$info.panel <- NULL
-    }
+  observeEvent(input$scalebar_objective, {
+    # Scalebar / objective ####
+    print("observe() - 07 - Scalebar objective")
+    # browser()
+    if (input$scalebar_objective %in% names(pixels.per.micron)) {
+      ppu <- pixels.per.micron[input$scalebar_objective] %>% unname
+      updateNumericInput(session=session, inputId = "scalebar_px_per_um", value = ppu)
+    } # end if
+    print("... done here (07)")
   })
   
+  observe({
+    # Scalebar ####
+    print("observe() - 08 - Scalebar")
+    rv$param_scalebar <- list(
+      bar.height = input$scalebar_height,
+      text.height = input$scalebar_txt_height,
+      bar.width.um = input$scalebar_microns,
+      objective = input$scalebar_objective,
+      px.per.um = input$scalebar_px_per_um,
+      padding = input$scalebar_padding,
+      bar.color = input$scalebar_color,
+      bar.offset = input$scalebar_offset
+    ) # end list
+    
+    if (input$check_scalebar == "TRUE") {
+      print("... scalebar true")
+      if (!is.null(rv$composite.rescaled)) {
+        if (!any(sapply(rv$param_scalebar, is.na))) {
+          rv$info.panel <- make.info.panel(composite=rv$composite.rescaled,
+                                           bar.height=rv$param_scalebar$bar.height,
+                                           txt.size = rv$param_scalebar$text.height,
+                                           breite.um=rv$param_scalebar$bar.width.um,
+                                           px.per.um=rv$param_scalebar$px.per.um,
+                                           txt="Text here",
+                                           farbe=rv$param_scalebar$bar.color,
+                                           padding=rv$param_scalebar$padding,
+                                           ofset=rv$param_scalebar$bar.offset)
+        } # end if
+      } # end if
+    } else {
+      print("... scalebar false")
+    }
+    print("... done here (08)")
+  })
   
+  # Download composite ####
   output$download <- downloadHandler(
     filename = function () {
       a <- "composite.png"
       a
     },
     content = function(file) {
-      EBImage::writeImage(x=rv$composite.rescaled, files=file, type="png")
+      EBImage::writeImage(x=rv$composite.with.info, files=file, type="png")
     }
   )
   
@@ -395,7 +499,7 @@ shinyServer(function(input, output, server, session) {
   }) # end renderPlot
   
   
-  # Respond to Quit button
+  # Quit button ####
   observeEvent(input$navbar, {
     if (input$navbar == "stop") {
       print("Quitting app ...")
