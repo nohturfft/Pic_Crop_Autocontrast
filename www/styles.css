@@ -13,6 +13,7 @@ div {
   padding-left: 10px;
   padding-top: 5px;
   padding-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .checkbox {
@@ -50,4 +51,12 @@ div {
   height: 24px;
   margin-top: 0px;
   margin-bottom: 0px;
+}
+
+#selection_well #radio_overview label.control-label {
+  display: none;
+}
+
+.wtHolder {
+  margin-bottom: 10px;
 }
