@@ -34,6 +34,9 @@ shinyUI(
                          ),
                          hidden(
                            plotOutput("plot_overview", width="400px", height="260px", click = "img_click")
+                         ),
+                         hidden(
+                           radioButtons(inputId = "radio_overview", label = NULL, choices = c("Pic1", "Pic2", "Pic3"), selected=1, inline = TRUE)
                          )
                ),
                wellPanel(id="composite_well",
