@@ -25,6 +25,7 @@ shinyUI(
                align="left",
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
                rHandsontableOutput("hot_files"),
+               rHandsontableOutput("hot_files2"),
                tags$p(""),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
