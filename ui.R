@@ -49,8 +49,15 @@ shinyUI(
                          conditionalPanel(
                            condition = "input.check_scalebar == 1",
                            tags$div(id = "div_scalebar", class="x",
-                                    selectInput("select_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other")),
-                                    numericInput("px_per_um", "Pixels per µm:", 100, min = 1))
+                                    selectInput("scalebar_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other"),
+                                                selected="20x"),
+                                    numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
+                                    numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
+                                    numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
+                                    numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
+                                    numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
+                                    numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
+                                    selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black"))
                          )),
                tags$p(""),
                hidden(downloadButton("download", "Download composite"))
