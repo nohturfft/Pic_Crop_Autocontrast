@@ -431,6 +431,7 @@ shinyServer(function(input, output, server, session) {
   }) # end observe
   
   
+  
   observeEvent(input$scalebar_objective, {
     # Scalebar / objective ####
     print("observe() - 07 - Scalebar objective")
@@ -441,6 +442,8 @@ shinyServer(function(input, output, server, session) {
     } # end if
     print("... done here (07)")
   })
+  
+  
   
   observe({
     # Scalebar ####
@@ -472,7 +475,9 @@ shinyServer(function(input, output, server, session) {
         } # end if
       } # end if
     } else {
+      # Remove scalebar
       print("... scalebar false")
+      rv$info.panel <- NULL
     }
     print("... done here (08)")
   })
