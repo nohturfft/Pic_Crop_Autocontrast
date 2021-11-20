@@ -53,6 +53,12 @@ div {
   margin-bottom: 0px;
 }
 
+/* Action button to show modal with scalebar parameters */
+#show_scalebar_modal {
+  height: 24px;
+  padding: 0px 5px;
+}
+
 #selection_well #radio_overview label.control-label {
   display: none;
 }
@@ -60,3 +66,4 @@ div {
 .wtHolder {
   margin-bottom: 10px;
 }
+

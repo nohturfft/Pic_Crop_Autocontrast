@@ -243,7 +243,7 @@ shinyServer(function(input, output, server, session) {
         hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
       fhot2
     })
-
+    
     
     # Update radio button under selection pic:
     updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
@@ -513,14 +513,20 @@ shinyServer(function(input, output, server, session) {
   }
   ) # end renderPlot
   
-  output$plot2 <- renderPlot({
-    # Output plot final images ####
-    print("output$plot2 (Plot final images)")
-    if (!is.null(rv$composite.rescaled)) {
-      # plot(rv$composite.rescaled, all=TRUE)
-      plot(rv$composite.with.info, all=TRUE)
-    } # end if
-  }) # end renderPlot
+  observe({
+    output$plot2 <- renderPlot({
+      # Output plot final images ####
+      print("output$plot2 (Plot final images)")
+      if (!is.null(rv$composite.rescaled)) {
+        # plot(rv$composite.rescaled, all=TRUE)
+        plot(rv$composite.with.info, all=TRUE)
+      } # end if
+    },
+    # width=ifelse(is.null(rv$composite.rescaled), "auto", imager::width(rv$composite.rescaled))
+    height="auto"
+    ) # end renderPlot
+  })
+  
   
   
   # Quit button ####

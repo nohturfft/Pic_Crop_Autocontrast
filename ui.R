@@ -28,7 +28,7 @@ shinyUI(
                rHandsontableOutput("hot_files"),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
-                                  numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
+                                  numericInput('size', 'Pixel size selction', 500, min = 10, max = 1000),
                                   numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                                   numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),
                          ),
@@ -51,20 +51,29 @@ shinyUI(
                ),
                rHandsontableOutput("hot_colors"),
                wellPanel(id="scalebar_well",
-                         checkboxInput("check_scalebar", "Add a scale bar", FALSE),
+                         splitLayout(
+                         checkboxInput("check_scalebar", "Add a scale bar", TRUE),
                          conditionalPanel(
                            condition = "input.check_scalebar == 1",
-                           tags$div(id = "div_scalebar", class="x",
-                                    selectInput("scalebar_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other"),
-                                                selected="20x"),
-                                    numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
-                                    numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
-                                    numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
-                                    numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
-                                    numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
-                                    numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
-                                    selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black"))
-                         )),
+                           actionButton("show_scalebar_modal", "Options"),
+                           
+                           bsModal("params", "Options", "show_scalebar_modal", size = "small",
+                                   tags$div(id = "div_scalebar", class="x",
+                                            selectInput("scalebar_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other"),
+                                                        selected="20x"),
+                                            numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
+                                            numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
+                                            numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
+                                            numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
+                                            numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
+                                            numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
+                                            selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black")
+                                   ) # end tags$div
+                           ) # end bsModal
+                           
+                         ) # end conditionalPanel
+                         ) # end splitLayout
+                         ), # end wellPanel
                tags$p(""),
                hidden(downloadButton("download", "Download composite"))
         ), # end column
