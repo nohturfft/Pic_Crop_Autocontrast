@@ -9,6 +9,7 @@ library(shinyjs)
 library(purrr)
 library(shiny)
 library(imager)
+library(shinyBS)
 
 
 shinyUI(
@@ -25,7 +26,6 @@ shinyUI(
                align="left",
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
                rHandsontableOutput("hot_files"),
-               tags$p(""),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
                                   numericInput('size', 'Pixel size', 500, min = 10, max = 1000),
@@ -48,7 +48,7 @@ shinyUI(
                            ) # end conditionalPanel
                          ) # end splitLayout
                          
-                         ),
+               ),
                rHandsontableOutput("hot_colors"),
                wellPanel(id="scalebar_well",
                          checkboxInput("check_scalebar", "Add a scale bar", FALSE),
@@ -69,21 +69,27 @@ shinyUI(
                hidden(downloadButton("download", "Download composite"))
         ), # end column
         column(width=9,
-               hidden(
-                 tags$div(id="div_plot_originals",
-                          tags$h3("Original:"),
-                          plotOutput("plot1")
-                 ) # end tags$div
-               ), # end hidden
-               hidden(
-                 tags$div(id="div_plot_autocontrast",
-                          tags$h3("Autocontrast:"),
-                          plotOutput("plot2")
-                 ) # end tags$div
-               ) # end hidden
-               
+               bsCollapse(
+                 id = "collapseExample", open = "Autocontrast", multiple = TRUE,
+                 bsCollapsePanel("Originals",
+                                 hidden(
+                                   tags$div(id="div_plot_originals",
+                                            plotOutput("plot1")
+                                   ) # end tags$div
+                                 ), # end hidden
+                                 style="info"
+                 ), # end bsCollapsePanel
+                 bsCollapsePanel("Autocontrast", 
+                                 hidden(
+                                   tags$div(id="div_plot_autocontrast",
+                                            plotOutput("plot2")
+                                   ) # end tags$div
+                                 ), # end hidden
+                                 style = "primary"
+                 ) # end bsCollapsePanel
+               ) # end bsCollapse 
         ) # end column
-      ) # end fluidPage
+      ) # fluidPage
     ), # end TabPanel
     tabPanel(
       title = "Quit",
