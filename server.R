@@ -23,7 +23,7 @@ library(purrr)
 # help(package="magick")
 
 #-------------------------------------------------------------------------------!
-# Functions
+# Functions ####
 #-------------------------------------------------------------------------------!
 my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
   # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
@@ -172,7 +172,16 @@ make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, 
 }
 # debug(make.info.panel)
 
+output.filename <- function(input.basename) {
+  sans.extn <- tools::file_path_sans_ext(input.basename)
+  sans.extn.2 <- stringr::str_remove(sans.extn, "_[A-Za-z]+$")
+  new.name <- paste0(sans.extn.2, "_Composite_X.png")
+  new.name
+}
+
+#-------------------------------------------------------------------------------!
 # Defaults ####
+#-------------------------------------------------------------------------------!
 color.choices <- c("Grayscale", "Green", "Blue", "Red")
 mic.objectives <- c("4x", "10x", "20x", "40x", "Other")
 pixels.per.micron <- c(0.687, 3.424, 6.895) %>% 
@@ -252,8 +261,6 @@ shinyServer(function(input, output, server, session) {
     # Load images from file: ####
     rv$img.list.original <- lapply(rv$files$datapath, imager::load.image)
     rv$img.list <- rv$img.list.original
-    
-    
   }) # end observeEvent(input$files)
   
   # input$size ####
@@ -485,8 +492,7 @@ shinyServer(function(input, output, server, session) {
   # Download composite ####
   output$download <- downloadHandler(
     filename = function () {
-      a <- "composite.png"
-      a
+      output.filename(isolate(rv$files$name[1]))
     },
     content = function(file) {
       EBImage::writeImage(x=rv$composite.with.info, files=file, type="png")
