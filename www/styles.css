@@ -67,3 +67,6 @@ div {
   margin-bottom: 10px;
 }
 
+.error_msg p {
+  color: red;
+}

@@ -239,28 +239,37 @@ shinyServer(function(input, output, server, session) {
     hide("download")
     hide("div_plot_originals")
     hide("div_plot_autocontrast")
-    rv$files <- input$files # data frame
-    rv$color.list <- rep("grayscale", nrow(rv$files))
     
-    # rhandsontable: files + colors ####
-    output$hot_files <- renderRHandsontable({
-      fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
-        rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                      highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
-        hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
-        hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
-        hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
-      fhot2
-    })
+    if (nrow(input$files) < 2) {
+      show("file_count_error")
+    } else {
+      hide("file_count_error")
+      
+      rv$files <- input$files # data frame
+      
+      rv$color.list <- rep("grayscale", nrow(rv$files))
+      
+      # rhandsontable: files + colors ####
+      output$hot_files <- renderRHandsontable({
+        fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
+          rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
+          hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
+          hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
+          hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
+        fhot2
+      })
+      
+      
+      # Update radio button under selection pic:
+      updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
+                         inline = TRUE, selected = "Pic2")
+      
+      # Load images from file: ####
+      rv$img.list.original <- lapply(rv$files$datapath, imager::load.image)
+      rv$img.list <- rv$img.list.original
+    } # end if
     
-    
-    # Update radio button under selection pic:
-    updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
-                       inline = TRUE, selected = "Pic1")
-    
-    # Load images from file: ####
-    rv$img.list.original <- lapply(rv$files$datapath, imager::load.image)
-    rv$img.list <- rv$img.list.original
   }) # end observeEvent(input$files)
   
   # input$size ####

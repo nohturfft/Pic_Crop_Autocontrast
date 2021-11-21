@@ -25,6 +25,9 @@ shinyUI(
         column(width=3,
                align="left",
                fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
+               hidden(
+                 tags$div(id="file_count_error", class="error_msg", tags$p("Error. Please choose at least 2 files."))
+               ),
                rHandsontableOutput("hot_files"),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
