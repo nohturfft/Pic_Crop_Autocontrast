@@ -276,21 +276,21 @@ shinyServer(function(input, output, server, session) {
   observeEvent(input$size,  {
     print("observeEvent(input$size)")
     rv$crop.size <- input$size
-    print(rv$size)
+    print(paste("... rv$size:", rv$size))
   })
   
   # input$coord.x ####
   observeEvent(input$coord.x,  {
     print("observeEvent(input$coord.x)")
     rv$crop.x <- input$coord.x
-    print(rv$crop.x)
+    print(paste("... rv$crop.x:", rv$crop.x))
   })
   
   # input$coord.y ####
   observeEvent(input$coord.y,  {
     print("observeEvent(input$coord.y)")
     rv$crop.y <- input$coord.y
-    print(rv$crop.y)
+    print(paste("... rv$crop.y:", rv$crop.y))
   })
   
   # input$gap ####
@@ -319,9 +319,9 @@ shinyServer(function(input, output, server, session) {
     x.max <- input$img_click$domain$right
     y.max <- input$img_click$domain$bottom
     top.left.x <- round(imager::width(isolate(rv$img.list[[1]])) * ( click.x / x.max), 0)
-    print(paste("top.left.x", top.left.x))
+    print(paste("... top.left.x", top.left.x))
     top.left.y <- round(imager::height(isolate(rv$img.list[[1]])) * ( click.y / y.max), 0)
-    print(paste("top.left.y", top.left.y))
+    print(paste("... top.left.y", top.left.y))
     
     updateNumericInput(session=session, "coord.x", value = top.left.x)
     updateNumericInput(session=session, "coord.y", value = top.left.y)
@@ -332,9 +332,11 @@ shinyServer(function(input, output, server, session) {
   observe({
     print("observe() - 01")
     if (!is.null(rv$img.list)) {
+      # browser()
       if (!any(is.na(c(rv$crop.size, rv$crop.x, rv$crop.y)))) {
         
         # Crop images ####
+        print("... crop images ...")
         rv$img.list.crop <- lapply(rv$img.list, function(img) {
           my.crop(img, rv$crop.size, rv$crop.x, rv$crop.y)
         })
@@ -342,11 +344,11 @@ shinyServer(function(input, output, server, session) {
         # Plot overview ####
         new.width <- 400
         new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
-        # print("Overview image - width:", new.width)
-        # print("Overview image - height:", new.height)
+        print(paste("... Overview image - width:", new.width))
+        print(paste("... Overview image - height:", new.height))
         # browser()
         if (!is.null(input$radio_overview)) {
-          print(input$radio_overview)
+          print(paste("... input$radio_overview:", input$radio_overview))
           overview.indx <- input$radio_overview %>% stringr::str_remove("Pic") %>% as.numeric
           print(paste("... overview.indx:", overview.indx))
           rv$overview <- rv$img.list[[overview.indx]] %>%
@@ -356,7 +358,7 @@ shinyServer(function(input, output, server, session) {
                           width=rv$crop.size, stroke=10) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
           show("plot_overview"); show("radio_overview")
-        }
+        } # end if
         
       } # end if
     } # end if
