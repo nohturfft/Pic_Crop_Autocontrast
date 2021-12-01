@@ -436,6 +436,7 @@ shinyServer(function(input, output, server, session) {
     print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
   })
   
+  
   observe({
     # Assemble processed images ####
     print("observe() 05: Assemble processed images")
@@ -446,25 +447,11 @@ shinyServer(function(input, output, server, session) {
         rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
       } else {
         rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL)
-      }
-      
-      # if (!is.null(rv$info.panel)) {
-      #   print("... Scalebar: TRUE")
-      #   print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
-      #   print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
-      #   print("... class(rv$info.panel)"); print(class(rv$info.panel))
-      #   print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
-      #   rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
-      # } else {
-      #   print("--- Scalebar: FALSE")
-      #   rv$composite.with.info <- rv$composite.rescaled
-      # } # end if
-      # 
-      # show("div_plot_autocontrast")
-      # show("download_composite"); show("download_pics")
+      } # end if
     } # end if
     print("... done here (05).")
   }) # end observe
+  
   
   observe({
     print("observe() - 06: Final composite")
@@ -488,6 +475,9 @@ shinyServer(function(input, output, server, session) {
         } # end if
         
       } else {
+        # Remove scalebar
+        print("... scalebar false")
+        rv$info.panel <- NULL
         rv$composite.with.info <- rv$composite.rescaled
       } # end if
       
@@ -495,23 +485,6 @@ shinyServer(function(input, output, server, session) {
       show("download_composite"); show("download_pics")
       
     } # end if
-    
-    # if (!is.null(rv$composite.rescaled)) {
-    #   if (!is.null(rv$info.panel)) {
-    #     print("... Scalebar: TRUE")
-    #     print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
-    #     print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
-    #     print("... class(rv$info.panel)"); print(class(rv$info.panel))
-    #     print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
-    #     rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
-    #   } else {
-    #     print("--- Scalebar: FALSE")
-    #     rv$composite.with.info <- rv$composite.rescaled
-    #   } # end if
-      
-      
-      
-    # } # end if
     
   }) # end observe
   
@@ -546,19 +519,7 @@ shinyServer(function(input, output, server, session) {
     
     if (input$check_scalebar == "TRUE") {
       print("... scalebar true")
-      if (!is.null(rv$composite.rescaled)) {
-        # if (!any(sapply(rv$param_scalebar, is.na))) {
-        #   rv$info.panel <- make.info.panel(composite=rv$composite.rescaled,
-        #                                    bar.height=rv$param_scalebar$bar.height,
-        #                                    txt.size = rv$param_scalebar$text.height,
-        #                                    breite.um=rv$param_scalebar$bar.width.um,
-        #                                    px.per.um=rv$param_scalebar$px.per.um,
-        #                                    txt="Text here",
-        #                                    farbe=rv$param_scalebar$bar.color,
-        #                                    padding=rv$param_scalebar$padding,
-        #                                    ofset=rv$param_scalebar$bar.offset)
-        # } # end if
-      } # end if
+
     } else {
       # Remove scalebar
       print("... scalebar false")
@@ -566,6 +527,7 @@ shinyServer(function(input, output, server, session) {
     } # end if
     print("... done here (08)")
   }) # end observe
+  
   
   # Download composite ####
   output$download_composite <- downloadHandler(
@@ -621,7 +583,6 @@ shinyServer(function(input, output, server, session) {
         plot(rv$composite.with.info, all=TRUE)
       } # end if
     },
-    # width=ifelse(is.null(rv$composite.rescaled), "auto", imager::width(rv$composite.rescaled))
     height="auto"
     ) # end renderPlot
   })
