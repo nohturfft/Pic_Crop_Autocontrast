@@ -327,9 +327,21 @@ shinyServer(function(input, output, server, session) {
     click.y <- input$img_click$y
     x.max <- input$img_click$domain$right
     y.max <- input$img_click$domain$bottom
-    top.left.x <- round(imager::width(isolate(rv$img.list[[1]])) * ( click.x / x.max), 0)
+    img.width <- imager::width(isolate(rv$img.list[[1]]))
+    img.height <- imager::height(isolate(rv$img.list[[1]]))
+    crop.width <- isolate(rv$crop.size)
+    crop.height <- isolate(rv$crop.size)
+    
+    top.left.x <- round(img.width * ( click.x / x.max), 0)
+    if ((top.left.x + crop.width) > img.width) {
+      top.left.x <- img.width - crop.width
+    }
     print(paste("... top.left.x", top.left.x))
-    top.left.y <- round(imager::height(isolate(rv$img.list[[1]])) * ( click.y / y.max), 0)
+    
+    top.left.y <- round(img.height * ( click.y / y.max), 0)
+    if ((top.left.y + crop.height) > img.height) {
+      top.left.y <- img.height - crop.height
+    }
     print(paste("... top.left.y", top.left.y))
     
     updateNumericInput(session=session, "coord.x", value = top.left.x)
