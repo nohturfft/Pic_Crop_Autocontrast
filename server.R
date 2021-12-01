@@ -90,7 +90,7 @@ compose.pics <- function(pic.list, pic.gap) {
 compose.info <- function(pic1, pic2) {
   
   aa <- lapply(list(pic1, pic2), EBImage::as.Image)
-  stopifnot(imager::width(pic1) == imager::width(pic2))
+  # stopifnot(imager::width(pic1) == imager::width(pic2))
   bb <- lapply(aa, EBImage::toRGB)
   res <- EBImage::abind(bb, along=2)
   res
@@ -236,7 +236,7 @@ shinyServer(function(input, output, server, session) {
   observeEvent(input$files, {
     # browser()
     print("observeEvent(input$files)")
-    hide("download")
+    hide("download_composite"); hide("download_pics")
     hide("div_plot_originals")
     hide("div_plot_autocontrast")
     
@@ -275,6 +275,7 @@ shinyServer(function(input, output, server, session) {
   # input$size ####
   observeEvent(input$size,  {
     print("observeEvent(input$size)")
+    # browser()
     rv$crop.size <- input$size
     print(paste("... rv$size:", rv$size))
   })
@@ -331,14 +332,15 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     print("observe() - 01")
+    input$selection_btn
     if (!is.null(rv$img.list)) {
       # browser()
-      if (!any(is.na(c(rv$crop.size, rv$crop.x, rv$crop.y)))) {
+      if (!any(is.na(c(isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))))) {
         
         # Crop images ####
         print("... crop images ...")
         rv$img.list.crop <- lapply(rv$img.list, function(img) {
-          my.crop(img, rv$crop.size, rv$crop.x, rv$crop.y)
+          my.crop(img, isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))
         })
         
         # Plot overview ####
@@ -353,9 +355,9 @@ shinyServer(function(input, output, server, session) {
           print(paste("... overview.indx:", overview.indx))
           rv$overview <- rv$img.list[[overview.indx]] %>%
             imager::add.color() %>%
-            my.draw.rect2(., x.top.left=rv$crop.x,
-                          y.top.left=rv$crop.y,
-                          width=rv$crop.size, stroke=10) %>%
+            my.draw.rect2(., x.top.left=isolate(rv$crop.x),
+                          y.top.left=isolate(rv$crop.y),
+                          width=isolate(rv$crop.size), stroke=10) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
           show("plot_overview"); show("radio_overview")
         } # end if
@@ -420,7 +422,7 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Composite of final images ####
-    print("observe() - 05")
+    print("observe() - 05 Composite of final images")
     # browser()
     if (! is.null(rv$img.list.crop.rescale)) {
       if (rv$gap.size > 0) {
@@ -431,11 +433,11 @@ shinyServer(function(input, output, server, session) {
       }
       
       if (!is.null(rv$info.panel)) {
-        print("--- Scalebar: TRUE")
-        print(class(rv$composite.rescaled)) # "EBImage" (1015  500    3    1    1)
-        print(dim(rv$composite.rescaled))
-        print(class(rv$info.panel)) # "cimg"         "imager_array" "numeric" (1015   30    1    3)
-        print(dim(rv$info.panel))
+        print("... Scalebar: TRUE")
+        print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
+        print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
+        print("... class(rv$info.panel)"); print(class(rv$info.panel))
+        print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
         rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
       } else {
         print("--- Scalebar: FALSE")
@@ -443,7 +445,7 @@ shinyServer(function(input, output, server, session) {
       }
       
       show("div_plot_autocontrast")
-      show("download")
+      show("download_composite"); show("download_pics")
     } # end if
     print("... done here 05.")
   }) # end observe
@@ -501,14 +503,32 @@ shinyServer(function(input, output, server, session) {
   })
   
   # Download composite ####
-  output$download <- downloadHandler(
+  output$download_composite <- downloadHandler(
     filename = function () {
       output.filename(isolate(rv$files$name[1]))
     },
     content = function(file) {
       EBImage::writeImage(x=rv$composite.with.info, files=file, type="png")
     }
-  )
+  ) # end downloadHandler
+  
+  # Download individual images ####
+  observeEvent(input$download_pics, {
+    # 
+    # browser()
+    print("observeEvent(input$download_pics)")
+    # print("Hello")
+    if (!is.null(rv$img.list.crop.rescale)) {
+      for (i in seq_along(rv$img.list.crop.rescale)) {
+        pic.file <- paste0("Pic_", i, ".png")
+        EBImage::writeImage(x=EBImage::as.Image(rv$img.list.crop.rescale[[i]]),
+                            type="png",
+                            files=pic.file)
+        print(paste("... saved:", pic.file))
+      } # end for
+    } # end if
+    print("Hello")
+  }) # end observeEvent
   
   output$plot_overview <- renderPlot({
     # Output overview plot ####
