@@ -31,10 +31,11 @@ shinyUI(
                rHandsontableOutput("hot_files"),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
-                                  numericInput('size', 'Pixel size selction', 500, min = 10, max = 1000),
+                                  numericInput('size', 'Pixel size selection', 650, min = 10, max = 1000),
                                   numericInput('coord.x', 'X Coordinate (top left)', 1, min = 1),
                                   numericInput('coord.y', 'Y coordinate (top left)', 1, min = 1),
                          ),
+                         actionButton("selection_btn", "Apply changes"),
                          hidden(
                            plotOutput("plot_overview", width="400px", height="260px", click = "img_click")
                          ),
@@ -78,7 +79,8 @@ shinyUI(
                          ) # end splitLayout
                          ), # end wellPanel
                tags$p(""),
-               hidden(downloadButton("download", "Download composite"))
+               hidden(downloadButton("download_composite", "Download composite")),
+               hidden(actionButton("download_pics", "Download individual imgs"))
         ), # end column
         column(width=9,
                bsCollapse(
