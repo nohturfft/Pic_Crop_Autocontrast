@@ -26,6 +26,7 @@ library(purrr)
 # Functions ####
 #-------------------------------------------------------------------------------!
 my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
+  print("... Function: my.draw.rect2()")
   # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
   stopifnot(imager::spectrum(img) == 3)
   tmp <- img
@@ -41,10 +42,12 @@ my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
 }
 
 my.rescale <- function(imge) {
+  print("... Function: my.rescale()")
   (imge - min(imge)) / (max(imge) - min(imge))
 }
 
 my.crop <- function(pic, breite, start.x, start.y) {
+  print("... Function: my.crop()")
   imager::imsub(pic,
                 x %inr% c(start.x, start.x + breite - 1),
                 y %inr% c(start.y, start.y + breite - 1))
@@ -56,10 +59,12 @@ make.gap <- function(image.list, gap.width, gap.col="white") {
 }
 
 intersperse.imgs <- function(pic1, pic2, pic.gap) {
+  print("... Function: intersperse.imgs()")
   list(pic1, pic.gap, pic2)
 }
 
 merge.pics <- function(pic.list, pic.gap) {
+  print("... Function: merge.pics()")
   if (!is.null(pic.gap)) {
     aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
     bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
@@ -73,6 +78,7 @@ merge.pics <- function(pic.list, pic.gap) {
 # debug(merge.pics)
 
 compose.pics <- function(pic.list, pic.gap) {
+  print("... Function: compose.pics()")
   if (!is.null(pic.gap)) {
     aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
     bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
@@ -88,7 +94,7 @@ compose.pics <- function(pic.list, pic.gap) {
 # debug(compose.pics)
 
 compose.info <- function(pic1, pic2) {
-  
+  print("... Function: compose.info()")
   aa <- lapply(list(pic1, pic2), EBImage::as.Image)
   # stopifnot(imager::width(pic1) == imager::width(pic2))
   bb <- lapply(aa, EBImage::toRGB)
@@ -98,6 +104,7 @@ compose.info <- function(pic1, pic2) {
 # debug(compose.info)
 
 my.false.colorise <- function(bild, farbe) {
+  print("... Function: my.false.colorise()")
   farbe <- tolower(farbe)
   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
   
@@ -116,7 +123,7 @@ my.false.colorise <- function(bild, farbe) {
 }
 
 make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, padding, breite.um, px.per.um) {
-  print("Function: make.info.panel()")
+  print("... Function: make.info.panel()")
   
   # https://en.wikipedia.org/wiki/Typeface_anatomy
   # descender = pixels taken up by lower part of g j µ etc.
@@ -173,6 +180,7 @@ make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, 
 # debug(make.info.panel)
 
 output.filename <- function(input.basename) {
+  print("Function: output.filename()")
   sans.extn <- tools::file_path_sans_ext(input.basename)
   sans.extn.2 <- stringr::str_remove(sans.extn, "_[A-Za-z]+$")
   new.name <- paste0(sans.extn.2, "_Composite_X.png")
@@ -277,7 +285,7 @@ shinyServer(function(input, output, server, session) {
     print("observeEvent(input$size)")
     # browser()
     rv$crop.size <- input$size
-    print(paste("... rv$size:", rv$size))
+    print(paste("... rv$crop.size:", rv$crop.size))
   })
   
   # input$coord.x ####
@@ -331,12 +339,12 @@ shinyServer(function(input, output, server, session) {
   
   
   observe({
-    print("observe() - 01")
+    print("observe() 01: Crop images + plot overview")
     input$selection_btn
     if (!is.null(rv$img.list)) {
       # browser()
-      if (!any(is.na(c(isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))))) {
-        
+      # if (!any(is.na(c(isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))))) {
+      if (!any(is.na(c(isolate(rv$crop.size), rv$crop.x, rv$crop.y)))) {
         # Crop images ####
         print("... crop images ...")
         rv$img.list.crop <- lapply(rv$img.list, function(img) {
@@ -344,6 +352,7 @@ shinyServer(function(input, output, server, session) {
         })
         
         # Plot overview ####
+        print("... plot overview ...")
         new.width <- 400
         new.height <- round(((new.width / imager::width(rv$img.list[[1]])) * imager::height(rv$img.list[[1]])), 0)
         print(paste("... Overview image - width:", new.width))
@@ -364,22 +373,26 @@ shinyServer(function(input, output, server, session) {
         
       } # end if
     } # end if
+    print(paste("... done here (01).", Sys.time()))
   }) # end observe
+  
   
   observe({
     # Autocontrast ####
-    print("observe() - 02 (Autocontrast + color)")
+    print("observe() 02: Autocontrast + color")
     if (!is.null(rv$img.list.crop)) {
       tmp <- lapply(rv$img.list.crop, my.rescale)
       rv$img.list.crop.rescale <- lapply(seq_along(rv$img.list.crop), function(i) {
         my.false.colorise(tmp[[i]], rv$color.list[i])
       }) # end lapply
     } # end if
+    print(paste("... done here (02).", Sys.time()))
   }) # end observe
+  
   
   observe({
     # Composite cropped images ####
-    print("observe() - 03 (Composite cropped images)")
+    print("observe() 03: Composite cropped images - originals")
     if (! is.null(rv$img.list.crop)) {
       if (rv$gap.size > 0) {
         img.gap <- make.gap(rv$img.list.crop, rv$gap.size, "white")
@@ -387,11 +400,13 @@ shinyServer(function(input, output, server, session) {
         rv$composite.original <- merge.pics(rv$img.list.crop, img.gap)
       } else {
         rv$composite.original <- merge.pics(rv$img.list.crop, pic.gap=NULL)
-      }
+      } # end if
       
       show("div_plot_originals")
     } # end if
+    print(paste("... done here (03).", Sys.time()))
   }) # end observe
+  
   
   # input$hot_files ####
   observeEvent(input$hot_files, {
@@ -418,11 +433,12 @@ shinyServer(function(input, output, server, session) {
         } # end if
       }
     }
+    print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
   })
   
   observe({
-    # Composite of final images ####
-    print("observe() - 05 Composite of final images")
+    # Assemble processed images ####
+    print("observe() 05: Assemble processed images")
     # browser()
     if (! is.null(rv$img.list.crop.rescale)) {
       if (rv$gap.size > 0) {
@@ -432,22 +448,71 @@ shinyServer(function(input, output, server, session) {
         rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL)
       }
       
-      if (!is.null(rv$info.panel)) {
-        print("... Scalebar: TRUE")
-        print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
-        print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
-        print("... class(rv$info.panel)"); print(class(rv$info.panel))
-        print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
-        rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
+      # if (!is.null(rv$info.panel)) {
+      #   print("... Scalebar: TRUE")
+      #   print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
+      #   print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
+      #   print("... class(rv$info.panel)"); print(class(rv$info.panel))
+      #   print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
+      #   rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
+      # } else {
+      #   print("--- Scalebar: FALSE")
+      #   rv$composite.with.info <- rv$composite.rescaled
+      # } # end if
+      # 
+      # show("div_plot_autocontrast")
+      # show("download_composite"); show("download_pics")
+    } # end if
+    print("... done here (05).")
+  }) # end observe
+  
+  observe({
+    print("observe() - 06: Final composite")
+    
+    if (!is.null(rv$composite.rescaled)) {
+      if (input$check_scalebar == "TRUE") {
+        if (!any(sapply(rv$param_scalebar, is.na))) {
+          info.panel <- make.info.panel(composite=rv$composite.rescaled,
+                                        bar.height=rv$param_scalebar$bar.height,
+                                        txt.size = rv$param_scalebar$text.height,
+                                        breite.um=rv$param_scalebar$bar.width.um,
+                                        px.per.um=rv$param_scalebar$px.per.um,
+                                        txt="Text here",
+                                        farbe=rv$param_scalebar$bar.color,
+                                        padding=rv$param_scalebar$padding,
+                                        ofset=rv$param_scalebar$bar.offset)
+          print("... done making info panel.")
+          rv$composite.with.info <- compose.info(rv$composite.rescaled, info.panel)
+        } else {
+          rv$composite.with.info <- rv$composite.rescaled
+        } # end if
+        
       } else {
-        print("--- Scalebar: FALSE")
         rv$composite.with.info <- rv$composite.rescaled
-      }
+      } # end if
       
       show("div_plot_autocontrast")
       show("download_composite"); show("download_pics")
+      
     } # end if
-    print("... done here 05.")
+    
+    # if (!is.null(rv$composite.rescaled)) {
+    #   if (!is.null(rv$info.panel)) {
+    #     print("... Scalebar: TRUE")
+    #     print("... class(rv$composite.rescaled):"); print(class(rv$composite.rescaled))
+    #     print("... dim(rv$composite.rescaled):"); print(dim(rv$composite.rescaled))
+    #     print("... class(rv$info.panel)"); print(class(rv$info.panel))
+    #     print("... dim(rv$info.panel):"); print(dim(rv$info.panel))
+    #     rv$composite.with.info <- compose.info(rv$composite.rescaled, rv$info.panel)
+    #   } else {
+    #     print("--- Scalebar: FALSE")
+    #     rv$composite.with.info <- rv$composite.rescaled
+    #   } # end if
+      
+      
+      
+    # } # end if
+    
   }) # end observe
   
   
@@ -467,7 +532,7 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Scalebar ####
-    print("observe() - 08 - Scalebar")
+    print("observe() 08: Scalebar")
     rv$param_scalebar <- list(
       bar.height = input$scalebar_height,
       text.height = input$scalebar_txt_height,
@@ -482,25 +547,25 @@ shinyServer(function(input, output, server, session) {
     if (input$check_scalebar == "TRUE") {
       print("... scalebar true")
       if (!is.null(rv$composite.rescaled)) {
-        if (!any(sapply(rv$param_scalebar, is.na))) {
-          rv$info.panel <- make.info.panel(composite=rv$composite.rescaled,
-                                           bar.height=rv$param_scalebar$bar.height,
-                                           txt.size = rv$param_scalebar$text.height,
-                                           breite.um=rv$param_scalebar$bar.width.um,
-                                           px.per.um=rv$param_scalebar$px.per.um,
-                                           txt="Text here",
-                                           farbe=rv$param_scalebar$bar.color,
-                                           padding=rv$param_scalebar$padding,
-                                           ofset=rv$param_scalebar$bar.offset)
-        } # end if
+        # if (!any(sapply(rv$param_scalebar, is.na))) {
+        #   rv$info.panel <- make.info.panel(composite=rv$composite.rescaled,
+        #                                    bar.height=rv$param_scalebar$bar.height,
+        #                                    txt.size = rv$param_scalebar$text.height,
+        #                                    breite.um=rv$param_scalebar$bar.width.um,
+        #                                    px.per.um=rv$param_scalebar$px.per.um,
+        #                                    txt="Text here",
+        #                                    farbe=rv$param_scalebar$bar.color,
+        #                                    padding=rv$param_scalebar$padding,
+        #                                    ofset=rv$param_scalebar$bar.offset)
+        # } # end if
       } # end if
     } else {
       # Remove scalebar
       print("... scalebar false")
       rv$info.panel <- NULL
-    }
+    } # end if
     print("... done here (08)")
-  })
+  }) # end observe
   
   # Download composite ####
   output$download_composite <- downloadHandler(
@@ -514,10 +579,7 @@ shinyServer(function(input, output, server, session) {
   
   # Download individual images ####
   observeEvent(input$download_pics, {
-    # 
-    # browser()
     print("observeEvent(input$download_pics)")
-    # print("Hello")
     if (!is.null(rv$img.list.crop.rescale)) {
       for (i in seq_along(rv$img.list.crop.rescale)) {
         pic.file <- paste0("Pic_", i, ".png")
