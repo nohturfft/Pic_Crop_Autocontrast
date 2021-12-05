@@ -51,35 +51,32 @@ shinyUI(
                              condition = "input.check_gap == 1",
                              tags$div(id = "div_gap", class="x", numericInput('gap', 'Size:', 15, min = 0, max = 100)),
                            ) # end conditionalPanel
+                         ), # end splitLayout
+                         splitLayout(
+                           checkboxInput("check_scalebar", "Add a scale bar", TRUE),
+                           conditionalPanel(
+                             condition = "input.check_scalebar == 1",
+                             actionButton("show_scalebar_modal", "Options"),
+                             
+                             bsModal("params", "Options", "show_scalebar_modal", size = "small",
+                                     tags$div(id = "div_scalebar", class="x",
+                                              selectInput("scalebar_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other"),
+                                                          selected="20x"),
+                                              numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
+                                              numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
+                                              numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
+                                              numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
+                                              numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
+                                              numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
+                                              selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black")
+                                     ) # end tags$div
+                             ) # end bsModal
+                           ) # end conditionalPanel
                          ) # end splitLayout
                ), # end wellPanel
                
                rHandsontableOutput("hot_colors"),
                
-               wellPanel(id="scalebar_well",
-                         splitLayout(
-                         checkboxInput("check_scalebar", "Add a scale bar", TRUE),
-                         conditionalPanel(
-                           condition = "input.check_scalebar == 1",
-                           actionButton("show_scalebar_modal", "Options"),
-                           
-                           bsModal("params", "Options", "show_scalebar_modal", size = "small",
-                                   tags$div(id = "div_scalebar", class="x",
-                                            selectInput("scalebar_objective", "Objective:", choices = c("5x", "10x", "20x", "40x", "Other"),
-                                                        selected="20x"),
-                                            numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
-                                            numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
-                                            numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
-                                            numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
-                                            numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
-                                            numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
-                                            selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black")
-                                   ) # end tags$div
-                           ) # end bsModal
-                           
-                         ) # end conditionalPanel
-                         ) # end splitLayout
-                         ), # end wellPanel
                tags$p(""),
                wellPanel(
                  id="correlation_panel",
@@ -105,15 +102,6 @@ shinyUI(
                                  ), # end hidden
                                  style="info"
                  ), # end bsCollapsePanel
-                 # bsCollapsePanel("Correlation",
-                 #                 hidden(
-                 #                   tags$div(id="div_plot_correlation",
-                 #                            # tableOutput("table_correl"),
-                 #                            # plotOutput("plot_correl")
-                 #                   ) # end tags$div
-                 #                 ), # end hidden
-                 #                 style="info"
-                 # ), # end bsCollapsePanel
                  bsCollapsePanel("Autocontrast", 
                                  hidden(
                                    tags$div(id="div_plot_autocontrast",
