@@ -59,8 +59,17 @@ div {
   padding: 0px 5px;
 }
 
+.form-control {
+  height: 23px;
+  padding: 0px 5px;
+}
+
 #selection_well #radio_overview label.control-label {
   display: none;
+}
+
+.form-group {
+  margin-bottom: 0px;
 }
 
 .wtHolder {
