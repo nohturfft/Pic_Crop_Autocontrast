@@ -77,7 +77,7 @@ merge.pics <- function(pic.list, pic.gap) {
 }
 # debug(merge.pics)
 
-compose.pics <- function(pic.list, pic.gap) {
+compose.pics <- function(pic.list, pic.gap, width.max) {
   print("--- Function: compose.pics()")
   if (!is.null(pic.gap)) {
     aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
@@ -88,9 +88,17 @@ compose.pics <- function(pic.list, pic.gap) {
   }
   dd <- lapply(cc, EBImage::as.Image)
   ee <- lapply(dd, EBImage::toRGB)
-  res <- EBImage::abind(ee, along=1)
+  ff <- EBImage::abind(ee, along=1)
+  
+  if (imager::width(ff) > width.max) {
+    res <- EBImage::resize(x=ff, w=width.max)
+  } # end if
+  
   res
 }
+
+
+
 # debug(compose.pics)
 
 compose.info <- function(pic.list) {
@@ -111,6 +119,7 @@ compose.info <- function(pic.list) {
 
 my.false.colorise <- function(bild, farbe) {
   print("--- Function: my.false.colorise()")
+  print(paste("    -- farbe:", farbe))
   farbe <- tolower(farbe)
   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
   
@@ -183,7 +192,7 @@ make.scalebar.panel <- function(composite, bar.height, txt.size, txt, ofset, far
     imager::grayscale(.)
   pic
 }
-# debug(make.scalebar.panel)
+
 
 make.file.info.panel <- function(basename.vector, composite, txt.size, padding) {
   print("--- Function: make.file.info.panel()")
@@ -192,7 +201,7 @@ make.file.info.panel <- function(basename.vector, composite, txt.size, padding) 
   padding.top <- padding
   pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>% 
     imager::draw_text(., x=0, y=padding, text = paste(basename.vector, collapse="\n"),
-                      color="black", fsize=txt.size) %>% 
+                      color="gray40", fsize=txt.size) %>% 
     imager::grayscale(.)
   print("   -- done here. (make.file.info.panel)")
   pic
@@ -201,12 +210,12 @@ make.file.info.panel <- function(basename.vector, composite, txt.size, padding) 
 
 make.selection.info.panel <- function(x, y, size, composite, txt.size, padding) {
   print("--- Function: make.selection.info.panel()")
-  panel.height <- (txt.size * 3) + padding + padding
+  panel.height <- txt.size + padding + padding
   panel.width <- imager::width(composite)
-  txt <- paste0("Coord.x: ", x, "; Coord.y: ", y, " (", size, "px X ", size, "px)")
+  txt <- paste0("Coord.x: ", x, "; Coord.y: ", y, " (", size, " X ", size, " px)")
   
   pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>% 
-    imager::draw_text(., x=0, y=padding, text = txt, color="black", fsize=txt.size) %>% 
+    imager::draw_text(., x=0, y=padding, text = txt, color="gray40", fsize=txt.size) %>% 
     imager::grayscale(.)
   print("   -- done here. (make.selection.info.panel)")
   pic
@@ -231,7 +240,7 @@ scalebar.color.choices <- c("white", "black")
 
 parameters.scalebar <- list(
   bar.height = 12,
-  text.height = 26,
+  text.height = 14,
   bar.width.um = 20,
   objective = mic.objectives[3],
   px.per.um = 3.424,
@@ -247,22 +256,24 @@ shinyServer(function(input, output, server, session) {
   # Reactive values ####
   rv <- reactiveValues(
     files = NULL,
+    img.list = NULL,
+    img.list.crop = NULL,
+    img.list.crop.correl = NULL,
+    img.list.crop.rescale = NULL,
     composite.original = NULL,
     composite.rescaled = NULL,
-    info.panel = NULL,
     composite.with.info = NULL,
+    info.panel = NULL,
     crop.x = 1,
     crop.y = 1,
     crop.size = 500,
     gap.size = 15,
     overview = NULL,
-    img.list = NULL,
-    img.list.crop = NULL,
-    img.list.crop.correl = NULL,
-    img.list.crop.rescale = NULL,
+    
     color.list = NULL,
     param_scalebar = parameters.scalebar,
-    img.list.crop.correl = NULL
+    img.list.crop.correl = NULL,
+    montage.max.width = 1500
   )
   
   # ui input defaults ####
@@ -367,6 +378,21 @@ shinyServer(function(input, output, server, session) {
       rv$gap.size <- 15
     }
   })
+  
+  
+  # input$apply_max_width ####
+  # observeEvent(input$apply_max_width, {
+  #   print("observeEvent(input$apply_max_width)")
+  #   # browser()
+  #   print(class(rv$composite.rescaled))
+  #   current.width <- imager::width(rv$composite.rescaled)
+  #   if (imager::width(rv$composite.rescaled) >= input$montage_max_width) {
+  #     rv$composite.rescaled <- EBImage::resize(x=EBImage::as.Image(isolate(rv$composite.with.info)),
+  #                                              w=input$montage_max_width)
+  #   } # end if
+  #   print("... done here. (observeEvent(input$apply_max_width))")
+  # }) # end observeEvent
+  
   
   # input$img_click ####
   observeEvent(input$img_click, {
@@ -524,7 +550,11 @@ shinyServer(function(input, output, server, session) {
   
   
   observe({
-    # Autocontrast ####
+    # Autocontrast + pseudocolor ####
+    # Trigger:
+    # - rv$img.list.crop
+    # - rv$color.list
+    
     print("observe() 02: Autocontrast + color")
     if (!is.null(rv$img.list.crop)) {
       tmp <- lapply(rv$img.list.crop, my.rescale)
@@ -532,7 +562,7 @@ shinyServer(function(input, output, server, session) {
         my.false.colorise(tmp[[i]], rv$color.list[i])
       }) # end lapply
     } # end if
-    print(paste("... done here (02).", Sys.time()))
+    print(paste("... done here (Autocontrast + color).", Sys.time()))
   }) # end observe
   
   
@@ -556,16 +586,31 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Assemble processed images ####
+    
+    # Triggers:
+    # - rv$img.list.crop.rescale
+    # - rv$gap.size
+    # - input$apply_max_width
+    
     print("observe() 05: Assemble processed images")
-    # browser()
+    
+    input$apply_max_width
+    
+    max.width <- isolate(input$montage_max_width)
     if (! is.null(rv$img.list.crop.rescale)) {
       if (rv$gap.size > 0) {
         img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
-        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap)
+        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, img.gap, max.width)
       } else {
-        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL)
+        rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL, max.width)
       } # end if
     } # end if
+    
+    
+    # if (imager::width(rv$composite.rescaled) > max.width) {
+    #   rv$composite.rescaled <- EBImage::resize(x=rv$composite.rescaled, w=max.width)
+    # } # end if
+    
     print("... done here (05).")
   }) # end observe
   
@@ -606,10 +651,16 @@ shinyServer(function(input, output, server, session) {
                                                               padding=rv$param_scalebar$padding)
             
             all.info.panel <- compose.info(list(scalebar.panel, file.info.panel, selection.info.panel))
-            rv$composite.with.info <- compose.info(list(rv$composite.rescaled, all.info.panel))
+            composite.with.info <- compose.info(list(rv$composite.rescaled, all.info.panel))
           } else {
-            rv$composite.with.info <- isolate(rv$composite.rescaled)
+            composite.with.info <- isolate(rv$composite.rescaled)
           } # end if (!any(sapply(rv$param_scalebar, is.na)))
+          
+          if (imager::width(composite.with.info) >= rv$montage.max.width) {
+            rv$composite.with.info <- EBImage::resize(x=composite.with.info, w=rv$montage.max.width)
+          } else {
+            rv$composite.with.info <- composite.with.info
+          } # end if
         
       } else {
         # Remove scalebar
