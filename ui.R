@@ -44,7 +44,11 @@ shinyUI(
                          ) # end hidden
                ), # end wellPanel
                
-               wellPanel(id="composite_well",
+               wellPanel(id="montage_well",
+                         splitLayout(cellWidths = c("80%", "20%"),
+                           numericInput("montage_max_width", "Montage max width (px):", 850),
+                           actionButton("apply_max_width", "Apply")
+                         ),
                          splitLayout(
                            checkboxInput("check_gap", "Insert a gap", TRUE),
                            conditionalPanel(
@@ -67,29 +71,14 @@ shinyUI(
                                               numericInput("scalebar_px_per_um", "Pixels per µm:", 3.424),
                                               numericInput("scalebar_microns", "Scalebar length (µm):", 100, min = 1),
                                               numericInput("scalebar_height", "Bar height (px):", 20, min = 10, max=100),
-                                              numericInput("scalebar_txt_height", "Text height (px):", 20, min = 6, max=100),
+                                              numericInput("scalebar_txt_height", "Text height (px):", 14, min = 6, max=100),
                                               numericInput("scalebar_padding", "Padding (px):", 10, min = 0),
                                               numericInput("scalebar_offset", "Offset (px):", 0, min = 0),
                                               selectInput("scalebar_color", "Colour:", choices = c("white", "black"), selected="black")
                                      ) # end tags$div
                              ) # end bsModal
                            ) # end conditionalPanel
-                         )
-                         # splitLayout(
-                         #   # Info checkbox ####
-                         #   checkboxInput("check_info", "Add info text", TRUE),
-                         #   conditionalPanel(
-                         #     condition = "input.check_info == 1",
-                         #     actionButton("show_info_modal", "Info options"),
-                         #     
-                         #     bsModal("params_info", "Info options", "show_info_modal", size = "small",
-                         #             tags$div(id = "div_info", class="x",
-                         #                      checkboxInput("check_info_selection", "Add selection info", TRUE),
-                         #                      checkboxInput("check_info_files", "Add file names", TRUE)
-                         #             ) # end tags$div
-                         #     ) # end bsModal
-                         #   ) # end conditionalPanel
-                         # ) # end splitLayout# end splitLayout
+                         ) # end splitLayout
                ), # end wellPanel
                
                rHandsontableOutput("hot_colors"),
