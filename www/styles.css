@@ -53,9 +53,9 @@ div {
   margin-bottom: 0px;
 }
 
-/* Action button to show modal with scalebar parameters */
-#show_scalebar_modal {
-  height: 24px;
+
+.btn {
+  height: 23px;
   padding: 0px 5px;
 }
 
