@@ -26,7 +26,7 @@ library(purrr)
 # Functions ####
 #-------------------------------------------------------------------------------!
 my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
-  print("... Function: my.draw.rect2()")
+  print("--- Function: my.draw.rect2()")
   # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
   stopifnot(imager::spectrum(img) == 3)
   tmp <- img
@@ -42,12 +42,12 @@ my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
 }
 
 my.rescale <- function(imge) {
-  print("... Function: my.rescale()")
+  print("--- Function: my.rescale()")
   (imge - min(imge)) / (max(imge) - min(imge))
 }
 
 my.crop <- function(pic, breite, start.x, start.y) {
-  print("... Function: my.crop()")
+  print("--- Function: my.crop()")
   imager::imsub(pic,
                 x %inr% c(start.x, start.x + breite - 1),
                 y %inr% c(start.y, start.y + breite - 1))
@@ -59,12 +59,12 @@ make.gap <- function(image.list, gap.width, gap.col="white") {
 }
 
 intersperse.imgs <- function(pic1, pic2, pic.gap) {
-  print("... Function: intersperse.imgs()")
+  print("--- Function: intersperse.imgs()")
   list(pic1, pic.gap, pic2)
 }
 
 merge.pics <- function(pic.list, pic.gap) {
-  print("... Function: merge.pics()")
+  print("--- Function: merge.pics()")
   if (!is.null(pic.gap)) {
     aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
     bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
@@ -78,7 +78,7 @@ merge.pics <- function(pic.list, pic.gap) {
 # debug(merge.pics)
 
 compose.pics <- function(pic.list, pic.gap) {
-  print("... Function: compose.pics()")
+  print("--- Function: compose.pics()")
   if (!is.null(pic.gap)) {
     aa <- purrr::reduce(pic.list, intersperse.imgs, pic.gap=pic.gap)
     bb <- lapply(aa, function(y) {if (!is.list(y)) list(y) else y})
@@ -93,18 +93,24 @@ compose.pics <- function(pic.list, pic.gap) {
 }
 # debug(compose.pics)
 
-compose.info <- function(pic1, pic2) {
-  print("... Function: compose.info()")
-  aa <- lapply(list(pic1, pic2), EBImage::as.Image)
+compose.info <- function(pic.list) {
+  print("--- Function: compose.info()")
+  # print("    -- dim(pic1):"); print(dim(pic1))
+  # print("    -- dim(pic2):"); print(dim(pic2))
+  # aa <- lapply(list(pic1, pic2), EBImage::as.Image)
+  aa <- lapply(pic.list, EBImage::as.Image)
+  print(sapply(aa, dim))
   # stopifnot(imager::width(pic1) == imager::width(pic2))
   bb <- lapply(aa, EBImage::toRGB)
+  print(sapply(bb, dim))
   res <- EBImage::abind(bb, along=2)
+  print("    -- done here. (compose.info)")
   res
 }
-# debug(compose.info)
+# undebug(compose.info)
 
 my.false.colorise <- function(bild, farbe) {
-  print("... Function: my.false.colorise()")
+  print("--- Function: my.false.colorise()")
   farbe <- tolower(farbe)
   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
   
@@ -122,8 +128,8 @@ my.false.colorise <- function(bild, farbe) {
   pic
 }
 
-make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, padding, breite.um, px.per.um) {
-  print("... Function: make.info.panel()")
+make.scalebar.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, padding, breite.um, px.per.um) {
+  print("--- Function: make.scalebar.panel()")
   
   # https://en.wikipedia.org/wiki/Typeface_anatomy
   # descender = pixels taken up by lower part of g j µ etc.
@@ -151,19 +157,19 @@ make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, 
   }
   bar.y1 <- bar.y0 - bar.height
   
-  print(paste("... panel.width:", panel.width))
-  print(paste("... panel.height:", panel.height))
-  print(paste("... bar.height:", bar.height))
-  print(paste("... txt.size:", txt.size))
-  print(paste("... inner.height:", inner.height))
-  print(paste("... bar.width.px:", bar.width.px))
-  print(paste("... descender:", descender))
-  print(paste("... padding:", padding))
-  print(paste("... padding.top:", padding.top))
-  print(paste("... panel.height:", panel.height))
-  print(paste("... text.y:", text.y))
-  print(paste("... bar.y0:", bar.y0))
-  print(paste("... bar.y1:", bar.y1))
+  print(paste("   -- panel.width:", panel.width))
+  print(paste("   -- panel.height:", panel.height))
+  print(paste("   -- bar.height:", bar.height))
+  print(paste("   -- txt.size:", txt.size))
+  print(paste("   -- inner.height:", inner.height))
+  print(paste("   -- bar.width.px:", bar.width.px))
+  print(paste("   -- descender:", descender))
+  print(paste("   -- padding:", padding))
+  print(paste("   -- padding.top:", padding.top))
+  print(paste("   -- panel.height:", panel.height))
+  print(paste("   -- text.y:", text.y))
+  print(paste("   -- bar.y0:", bar.y0))
+  print(paste("   -- bar.y1:", bar.y1))
   
   
   
@@ -177,15 +183,42 @@ make.info.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, 
     imager::grayscale(.)
   pic
 }
-# debug(make.info.panel)
+# debug(make.scalebar.panel)
+
+make.file.info.panel <- function(basename.vector, composite, txt.size, padding) {
+  print("--- Function: make.file.info.panel()")
+  panel.height <- (txt.size * length(basename.vector)) + padding + padding
+  panel.width <- imager::width(composite)
+  padding.top <- padding
+  pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>% 
+    imager::draw_text(., x=0, y=padding, text = paste(basename.vector, collapse="\n"),
+                      color="black", fsize=txt.size) %>% 
+    imager::grayscale(.)
+  print("   -- done here. (make.file.info.panel)")
+  pic
+} # end fct make.file.info.panel()
+
+
+make.selection.info.panel <- function(x, y, size, composite, txt.size, padding) {
+  print("--- Function: make.selection.info.panel()")
+  panel.height <- (txt.size * 3) + padding + padding
+  panel.width <- imager::width(composite)
+  txt <- paste0("Coord.x: ", x, "; Coord.y: ", y, " (", size, "px X ", size, "px)")
+  
+  pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>% 
+    imager::draw_text(., x=0, y=padding, text = txt, color="black", fsize=txt.size) %>% 
+    imager::grayscale(.)
+  print("   -- done here. (make.selection.info.panel)")
+  pic
+} # end fct make.selection.info.panel()
 
 output.filename <- function(input.basename) {
-  print("Function: output.filename()")
+  print("--- Function: output.filename()")
   sans.extn <- tools::file_path_sans_ext(input.basename)
   sans.extn.2 <- stringr::str_remove(sans.extn, "_[A-Za-z]+$")
   new.name <- paste0(sans.extn.2, "_Composite_X.png")
   new.name
-}
+} # end fct output.filename()
 
 #-------------------------------------------------------------------------------!
 # Defaults ####
@@ -539,15 +572,16 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Final montage ####
+    # browser()
     print("observe() - 06: Final montage")
     
     if (!is.null(rv$composite.rescaled)) {
-        print("... info TRUE")
-        ## Scalebar ####
+        
         if (input$check_scalebar == "TRUE") {
           print("... scalebar TRUE")
           if (!any(sapply(rv$param_scalebar, is.na))) {
-            info.panel <- make.info.panel(composite=rv$composite.rescaled,
+            ## Scalebar panel: ####
+            scalebar.panel <- make.scalebar.panel(composite=rv$composite.rescaled,
                                           bar.height=rv$param_scalebar$bar.height,
                                           txt.size = rv$param_scalebar$text.height,
                                           breite.um=rv$param_scalebar$bar.width.um,
@@ -556,23 +590,38 @@ shinyServer(function(input, output, server, session) {
                                           farbe=rv$param_scalebar$bar.color,
                                           padding=rv$param_scalebar$padding,
                                           ofset=rv$param_scalebar$bar.offset)
-            print("... done making info panel.")
-            rv$composite.with.info <- compose.info(rv$composite.rescaled, info.panel)
+            print("... done making scalebar panel.")
+            ## Input files panel: ####
+            file.info.panel <- make.file.info.panel(basename(isolate(rv$files$name)),
+                                                    composite=rv$composite.rescaled,
+                                                    txt.size=rv$param_scalebar$text.height,
+                                                    padding=rv$param_scalebar$padding)
+            print("... done making file info panel.")
+            ## Selection info panel: ####
+            selection.info.panel <- make.selection.info.panel(x=isolate(rv$crop.x),
+                                                              y=isolate(rv$crop.y),
+                                                              size=isolate(rv$crop.size),
+                                                              composite=rv$composite.rescaled,
+                                                              txt.size=rv$param_scalebar$text.height,
+                                                              padding=rv$param_scalebar$padding)
+            
+            all.info.panel <- compose.info(list(scalebar.panel, file.info.panel, selection.info.panel))
+            rv$composite.with.info <- compose.info(list(rv$composite.rescaled, all.info.panel))
           } else {
-            rv$composite.with.info <- rv$composite.rescaled
-          } # end if
+            rv$composite.with.info <- isolate(rv$composite.rescaled)
+          } # end if (!any(sapply(rv$param_scalebar, is.na)))
         
       } else {
         # Remove scalebar
-        print("... info FALSE")
+        print("... scalebar FALSE")
         rv$info.panel <- NULL
-        rv$composite.with.info <- rv$composite.rescaled
-      } # end if
+        rv$composite.with.info <- isolate(rv$composite.rescaled)
+      } # end if (input$check_scalebar == "TRUE")
       
       show("div_plot_autocontrast")
       show("download_composite"); show("download_pics")
       
-    } # end if
+    } # end if (!is.null(rv$composite.rescaled))
     
   }) # end observe
   
