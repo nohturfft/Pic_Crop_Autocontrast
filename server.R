@@ -538,29 +538,33 @@ shinyServer(function(input, output, server, session) {
   
   
   observe({
-    print("observe() - 06: Final composite")
+    # Final montage ####
+    print("observe() - 06: Final montage")
     
     if (!is.null(rv$composite.rescaled)) {
-      if (input$check_scalebar == "TRUE") {
-        if (!any(sapply(rv$param_scalebar, is.na))) {
-          info.panel <- make.info.panel(composite=rv$composite.rescaled,
-                                        bar.height=rv$param_scalebar$bar.height,
-                                        txt.size = rv$param_scalebar$text.height,
-                                        breite.um=rv$param_scalebar$bar.width.um,
-                                        px.per.um=rv$param_scalebar$px.per.um,
-                                        txt="Text here",
-                                        farbe=rv$param_scalebar$bar.color,
-                                        padding=rv$param_scalebar$padding,
-                                        ofset=rv$param_scalebar$bar.offset)
-          print("... done making info panel.")
-          rv$composite.with.info <- compose.info(rv$composite.rescaled, info.panel)
-        } else {
-          rv$composite.with.info <- rv$composite.rescaled
-        } # end if
+        print("... info TRUE")
+        ## Scalebar ####
+        if (input$check_scalebar == "TRUE") {
+          print("... scalebar TRUE")
+          if (!any(sapply(rv$param_scalebar, is.na))) {
+            info.panel <- make.info.panel(composite=rv$composite.rescaled,
+                                          bar.height=rv$param_scalebar$bar.height,
+                                          txt.size = rv$param_scalebar$text.height,
+                                          breite.um=rv$param_scalebar$bar.width.um,
+                                          px.per.um=rv$param_scalebar$px.per.um,
+                                          txt="Text here",
+                                          farbe=rv$param_scalebar$bar.color,
+                                          padding=rv$param_scalebar$padding,
+                                          ofset=rv$param_scalebar$bar.offset)
+            print("... done making info panel.")
+            rv$composite.with.info <- compose.info(rv$composite.rescaled, info.panel)
+          } else {
+            rv$composite.with.info <- rv$composite.rescaled
+          } # end if
         
       } else {
         # Remove scalebar
-        print("... scalebar false")
+        print("... info FALSE")
         rv$info.panel <- NULL
         rv$composite.with.info <- rv$composite.rescaled
       } # end if
@@ -589,7 +593,7 @@ shinyServer(function(input, output, server, session) {
     
     if (input$check_scalebar == "TRUE") {
       print("... scalebar true")
-
+      
     } else {
       # Remove scalebar
       print("... scalebar false")
