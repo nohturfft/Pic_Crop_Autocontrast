@@ -208,7 +208,7 @@ parameters.scalebar <- list(
 )
 
 #-------------------------------------------------------------------------------!
-# Server code
+# Server code ####
 #-------------------------------------------------------------------------------!
 shinyServer(function(input, output, server, session) {
   # Reactive values ####
@@ -225,9 +225,11 @@ shinyServer(function(input, output, server, session) {
     overview = NULL,
     img.list = NULL,
     img.list.crop = NULL,
+    img.list.crop.correl = NULL,
     img.list.crop.rescale = NULL,
     color.list = NULL,
-    param_scalebar = parameters.scalebar
+    param_scalebar = parameters.scalebar,
+    img.list.crop.correl = NULL
   )
   
   # ui input defaults ####
@@ -240,7 +242,7 @@ shinyServer(function(input, output, server, session) {
   updateSelectInput(session=session, "scalebar_color", choices = scalebar.color.choices, selected=scalebar.color.choices[2])
   updateNumericInput(session=session, "scalebar_offset", value = parameters.scalebar$bar.offset)
   
-  # input$files
+  # input$files ####
   observeEvent(input$files, {
     # browser()
     print("observeEvent(input$files)")
@@ -257,7 +259,7 @@ shinyServer(function(input, output, server, session) {
       
       rv$color.list <- rep("grayscale", nrow(rv$files))
       
-      # rhandsontable: files + colors ####
+      ## rhandsontable: files & colors ####
       output$hot_files <- renderRHandsontable({
         fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
@@ -268,17 +270,31 @@ shinyServer(function(input, output, server, session) {
         fhot2
       })
       
+      ## rhandsontable: correl files ####
+      output$hot_correl_files <- renderRHandsontable({
+        cor.files <- basename(rv$files$name)[1:2]
+        hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"), File = names(rv$img.list.crop)[1:2]) %>% 
+          rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
+          hot_col(col="Axis", readOnly = TRUE, halign = "htLeft", format="text") %>%
+          hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = names(rv$img.list.crop))
+      })
       
-      # Update radio button under selection pic:
+      
+      ## Update radio button under selection pic: ####
       updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
                          inline = TRUE, selected = "Pic2")
       
-      # Load images from file: ####
-      rv$img.list.original <- lapply(rv$files$datapath, imager::load.image)
-      rv$img.list <- rv$img.list.original
+      ## Load images from file: ####
+      rv$img.list.original <- lapply(rv$files$datapath, imager::load.image) %>% 
+        set_names(basename(rv$files$name))
+      
+      rv$img.list <- rv$img.list.original %>% 
+        set_names(names(rv$img.list.original))
     } # end if
     
   }) # end observeEvent(input$files)
+  
   
   # input$size ####
   observeEvent(input$size,  {
@@ -346,8 +362,92 @@ shinyServer(function(input, output, server, session) {
     
     updateNumericInput(session=session, "coord.x", value = top.left.x)
     updateNumericInput(session=session, "coord.y", value = top.left.y)
-    print("   ... done here.")
+    print("... done here.")
+  }) # end observeEvent(input$img_click)
+  
+  
+  # input$hot_files ####
+  observeEvent(input$hot_files, {
+    print("observeEvent() - input$hot_files")
+    if (!is.null(input$hot_files$changes$changes)) {
+      
+      # Get row selected:
+      if (!is.null(input$hot_files_select$select)) {
+        # browser()
+        hot.row <- input$hot_files_select$select$r
+        print(paste("... row selected:", hot.row))
+        hot.col <- input$hot_files_select$select$c
+        print(paste("... column selected:", hot.col))
+        if (hot.col == 2) {
+          file.selected <- input$hot_files$changes$changes[[1]][[4]]
+          print(paste("... file selected:", file.selected))
+          indx.img.selected <- which(basename(rv$files$name) == file.selected)
+          print(paste("... indx.img.selected:", indx.img.selected))
+          rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
+        } else if (hot.col == 3) {
+          color.selected <- input$hot_files$changes$changes[[1]][[4]]
+          print(paste("... Color chosen:", color.selected))
+          rv$color.list[hot.row] <- color.selected
+        } # end if
+      } # end if
+    } # end if
+    print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
+  }) # end observeEvent(input$hot_files)
+  
+  # input$hot_correl_files ####
+  observeEvent(input$hot_correl_files, {
+    print("observeEvent() - input$hot_correl_files")
+    # browser()
+    if (!is.null(rv$img.list.crop)) {
+      fil1 <- unlist(input$hot_correl_files$data[[1]][2])
+      fil2 <- unlist(input$hot_correl_files$data[[2]][2])
+      print(paste("... Correl file 1:", fil1))
+      print(paste("... Correl file 2:", fil2))
+      rv$img.list.crop.correl <- rv$img.list.crop[c(fil1, fil2)]
+      print("... done here.")
+    } # end if
   })
+  
+  # input$check_correl ####
+  observe({
+    print("observeEvent() - input$check_correl")
+    # browser()
+    if (input$check_correl == TRUE) {
+      
+      ## Correlation table ####
+      a <- lapply(rv$img.list.crop.correl, my.rescale) %>%
+        purrr::map(as.matrix) %>% 
+        purrr::map(as.vector) %>% 
+        set_names(c("x", "y"))
+      lm.results <- lm(y ~ x, data=a)
+      correl <- cor(a[[1]], a[[2]])
+      df.correl <- data.frame(Slope = lm.results$coefficients[2],
+                              Intercept = lm.results$coefficients[1],
+                              Correl = correl)
+      print(df.correl)
+      output$table_correl <- renderTable(df.correl, digits=4)
+      
+    } else {
+      print("Correlation checkbox FALSE")
+    } # end if
+  }) # end observeEvent(input$check_correl)
+  
+  
+  
+  
+  
+  # input$scalebar_objective ####
+  observeEvent(input$scalebar_objective, {
+    # Scalebar / objective
+    print("observe() - 07 - Scalebar objective")
+    # browser()
+    if (input$scalebar_objective %in% names(pixels.per.micron)) {
+      ppu <- pixels.per.micron[input$scalebar_objective] %>% unname
+      updateNumericInput(session=session, inputId = "scalebar_px_per_um", value = ppu)
+    } # end if
+    print("... done here (07)")
+  }) # end observeEvent(input$scalebar_objective)
+  
   
   
   observe({
@@ -355,13 +455,14 @@ shinyServer(function(input, output, server, session) {
     input$selection_btn
     if (!is.null(rv$img.list)) {
       # browser()
-      # if (!any(is.na(c(isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))))) {
       if (!any(is.na(c(isolate(rv$crop.size), rv$crop.x, rv$crop.y)))) {
         # Crop images ####
         print("... crop images ...")
         rv$img.list.crop <- lapply(rv$img.list, function(img) {
           my.crop(img, isolate(rv$crop.size), isolate(rv$crop.x), isolate(rv$crop.y))
-        })
+        }) %>% 
+          set_names(names(rv$img.list))
+        rv$img.list.crop.correl <- rv$img.list.crop[1:2]
         
         # Plot overview ####
         print("... plot overview ...")
@@ -420,35 +521,6 @@ shinyServer(function(input, output, server, session) {
   }) # end observe
   
   
-  # input$hot_files ####
-  observeEvent(input$hot_files, {
-    print("observeEvent() - input$hot_files")
-    if (!is.null(input$hot_files$changes$changes)) {
-      
-      # Get row selected:
-      if (!is.null(input$hot_files_select$select)) {
-        # browser()
-        hot.row <- input$hot_files_select$select$r
-        print(paste("... row selected:", hot.row))
-        hot.col <- input$hot_files_select$select$c
-        print(paste("... column selected:", hot.col))
-        if (hot.col == 2) {
-          file.selected <- input$hot_files$changes$changes[[1]][[4]]
-          print(paste("... file selected:", file.selected))
-          indx.img.selected <- which(basename(rv$files$name) == file.selected)
-          print(paste("... indx.img.selected:", indx.img.selected))
-          rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
-        } else if (hot.col == 3) {
-          color.selected <- input$hot_files$changes$changes[[1]][[4]]
-          print(paste("--- Color chosen:", color.selected))
-          rv$color.list[hot.row] <- color.selected
-        } # end if
-      }
-    }
-    print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
-  })
-  
-  
   observe({
     # Assemble processed images ####
     print("observe() 05: Assemble processed images")
@@ -501,20 +573,6 @@ shinyServer(function(input, output, server, session) {
   }) # end observe
   
   
-  
-  observeEvent(input$scalebar_objective, {
-    # Scalebar / objective ####
-    print("observe() - 07 - Scalebar objective")
-    # browser()
-    if (input$scalebar_objective %in% names(pixels.per.micron)) {
-      ppu <- pixels.per.micron[input$scalebar_objective] %>% unname
-      updateNumericInput(session=session, inputId = "scalebar_px_per_um", value = ppu)
-    } # end if
-    print("... done here (07)")
-  })
-  
-  
-  
   observe({
     # Scalebar ####
     print("observe() 08: Scalebar")
@@ -539,6 +597,9 @@ shinyServer(function(input, output, server, session) {
     } # end if
     print("... done here (08)")
   }) # end observe
+  
+  
+  
   
   
   # Download composite ####
@@ -576,9 +637,9 @@ shinyServer(function(input, output, server, session) {
   }
   ) # end renderPlot
   
-  output$plot1 <- renderPlot({
+  output$plot_originals <- renderPlot({
     # Output plot cropped images ####
-    print("output$plot1")
+    print("output$plot_originals")
     if (!is.null(rv$composite.original)) {
       par(mar=c(0,0,0,0))
       plot(rv$composite.original, rescale=FALSE, axes=FALSE)
@@ -587,9 +648,9 @@ shinyServer(function(input, output, server, session) {
   ) # end renderPlot
   
   observe({
-    output$plot2 <- renderPlot({
+    output$plot_montage <- renderPlot({
       # Output plot final images ####
-      print("output$plot2 (Plot final images)")
+      print("output$plot_montage (Plot final images)")
       if (!is.null(rv$composite.rescaled)) {
         # plot(rv$composite.rescaled, all=TRUE)
         plot(rv$composite.with.info, all=TRUE)

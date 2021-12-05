@@ -38,11 +38,12 @@ shinyUI(
                          actionButton("selection_btn", "Apply changes"),
                          hidden(
                            plotOutput("plot_overview", width="400px", height="260px", click = "img_click")
-                         ),
+                         ), # end hidden
                          hidden(
                            radioButtons(inputId = "radio_overview", label = NULL, choices = c("Pic1", "Pic2", "Pic3"), selected=1, inline = TRUE)
-                         )
-               ),
+                         ) # end hidden
+               ), # end wellPanel
+               
                wellPanel(id="composite_well",
                          splitLayout(
                            checkboxInput("check_gap", "Insert a gap", TRUE),
@@ -51,9 +52,10 @@ shinyUI(
                              tags$div(id = "div_gap", class="x", numericInput('gap', 'Size:', 15, min = 0, max = 100)),
                            ) # end conditionalPanel
                          ) # end splitLayout
-                         
-               ),
+               ), # end wellPanel
+               
                rHandsontableOutput("hot_colors"),
+               
                wellPanel(id="scalebar_well",
                          splitLayout(
                          checkboxInput("check_scalebar", "Add a scale bar", TRUE),
@@ -79,29 +81,48 @@ shinyUI(
                          ) # end splitLayout
                          ), # end wellPanel
                tags$p(""),
+               wellPanel(
+                 id="correlation_panel",
+                 checkboxInput("check_correl", "Calculate correlation", FALSE),
+                 conditionalPanel(
+                   condition = "input.check_correl == 1",
+                   rHandsontableOutput("hot_correl_files"),
+                   tableOutput("table_correl")
+                 )
+               ), # end wellPanel
                hidden(downloadButton("download_composite", "Download composite")),
                hidden(actionButton("download_pics", "Download individual imgs"))
         ), # end column
+        
         column(width=9,
                bsCollapse(
-                 id = "collapseExample", open = "Autocontrast", multiple = TRUE,
+                 id = "collapseExample", open = "Autocontrast", multiple = FALSE,
                  bsCollapsePanel("Originals",
                                  hidden(
                                    tags$div(id="div_plot_originals",
-                                            plotOutput("plot1")
+                                            plotOutput("plot_originals")
                                    ) # end tags$div
                                  ), # end hidden
                                  style="info"
                  ), # end bsCollapsePanel
+                 # bsCollapsePanel("Correlation",
+                 #                 hidden(
+                 #                   tags$div(id="div_plot_correlation",
+                 #                            # tableOutput("table_correl"),
+                 #                            # plotOutput("plot_correl")
+                 #                   ) # end tags$div
+                 #                 ), # end hidden
+                 #                 style="info"
+                 # ), # end bsCollapsePanel
                  bsCollapsePanel("Autocontrast", 
                                  hidden(
                                    tags$div(id="div_plot_autocontrast",
-                                            plotOutput("plot2")
+                                            plotOutput("plot_montage")
                                    ) # end tags$div
                                  ), # end hidden
                                  style = "primary"
                  ) # end bsCollapsePanel
-               ) # end bsCollapse 
+               ), # end bsCollapse 
         ) # end column
       ) # fluidPage
     ), # end TabPanel
@@ -113,3 +134,4 @@ shinyUI(
   ) # end navbarPage
 ) # end ShinyUI
 
+# undebug("shinyUI")
