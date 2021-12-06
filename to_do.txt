@@ -3,3 +3,4 @@ Predict output file name
 Image overlay
 Arrows
 Get file creation dates and add to info panel
+EBImage::tile() function to create multi-row montage?
