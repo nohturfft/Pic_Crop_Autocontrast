@@ -541,6 +541,7 @@ shinyServer(function(input, output, server, session) {
                           width=isolate(rv$crop.size), stroke=10) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
           show("plot_overview"); show("radio_overview")
+          show("correlation_panel")
         } # end if
         
       } # end if

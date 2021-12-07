@@ -83,16 +83,18 @@ shinyUI(
                
                rHandsontableOutput("hot_colors"),
                
-               tags$p(""),
-               wellPanel(
-                 id="correlation_panel",
-                 checkboxInput("check_correl", "Calculate correlation", FALSE),
-                 conditionalPanel(
-                   condition = "input.check_correl == 1",
-                   rHandsontableOutput("hot_correl_files"),
-                   tableOutput("table_correl")
-                 )
-               ), # end wellPanel
+               # tags$p(""),
+               hidden(
+                 wellPanel(
+                   id="correlation_panel",
+                   checkboxInput("check_correl", "Calculate correlation", FALSE),
+                   conditionalPanel(
+                     condition = "input.check_correl == 1",
+                     rHandsontableOutput("hot_correl_files"),
+                     tableOutput("table_correl")
+                   ) # end conditionalPanel
+                 ) # end wellPanel
+               ), # end hidden
                hidden(downloadButton("download_composite", "Download composite")),
                hidden(actionButton("download_pics", "Download individual imgs"))
         ), # end column
