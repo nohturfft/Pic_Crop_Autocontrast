@@ -534,13 +534,21 @@ shinyServer(function(input, output, server, session) {
           print(paste("... input$radio_overview:", input$radio_overview))
           overview.indx <- input$radio_overview %>% stringr::str_remove("Pic") %>% as.numeric
           print(paste("... overview.indx:", overview.indx))
-          rv$overview <- rv$img.list[[overview.indx]] %>%
+          if (input$check_overview_autocontrast == "TRUE") {
+            print("Overview autocontrast: TRUE")
+            img.tmp <- my.rescale(rv$img.list[[overview.indx]])
+          } else {
+            print("Overview autocontrast: FALSE")
+            img.tmp <- rv$img.list[[overview.indx]]
+          }
+          rv$overview <- img.tmp %>%
             imager::add.color() %>%
             my.draw.rect2(., x.top.left=isolate(rv$crop.x),
                           y.top.left=isolate(rv$crop.y),
                           width=isolate(rv$crop.size), stroke=10) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
-          show("plot_overview"); show("radio_overview")
+          show("plot_overview"); show("overview_options")
+          # show("radio_overview"); show("check_overview_autocontrast")
           show("correlation_panel")
         } # end if
         

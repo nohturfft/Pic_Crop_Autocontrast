@@ -40,14 +40,17 @@ shinyUI(
                            plotOutput("plot_overview", width="400px", height="260px", click = "img_click")
                          ), # end hidden
                          hidden(
-                           radioButtons(inputId = "radio_overview", label = NULL, choices = c("Pic1", "Pic2", "Pic3"), selected=1, inline = TRUE)
+                           splitLayout(id="overview_options", cellWidths = c("60%", "40%"),
+                                       radioButtons(inputId = "radio_overview", label = NULL, choices = c("Pic1", "Pic2", "Pic3"), selected=1, inline = TRUE),
+                                       checkboxInput("check_overview_autocontrast", "Autocontrast", TRUE)
+                           ) # end splitLayout
                          ) # end hidden
                ), # end wellPanel
                
                wellPanel(id="montage_well",
                          splitLayout(cellWidths = c("80%", "20%"),
-                           numericInput("montage_max_width", "Montage max width (px):", 850),
-                           actionButton("apply_max_width", "Apply")
+                                     numericInput("montage_max_width", "Montage max width (px):", 850),
+                                     actionButton("apply_max_width", "Apply")
                          ),
                          splitLayout(
                            checkboxInput("check_gap", "Insert a gap", TRUE),
