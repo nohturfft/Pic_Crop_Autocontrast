@@ -93,6 +93,7 @@ shinyUI(
                    checkboxInput("check_correl", "Calculate correlation", FALSE),
                    conditionalPanel(
                      condition = "input.check_correl == 1",
+                     radioButtons(inputId = "radio_correl", label = NULL, choices = c("Entire image", "Selection"), selected="Entire image", inline = TRUE),
                      rHandsontableOutput("hot_correl_files"),
                      tableOutput("table_correl")
                    ) # end conditionalPanel

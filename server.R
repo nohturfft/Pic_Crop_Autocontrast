@@ -25,19 +25,21 @@ library(purrr)
 #-------------------------------------------------------------------------------!
 # Functions ####
 #-------------------------------------------------------------------------------!
-my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5) {
+my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5, color="green") {
   print("--- Function: my.draw.rect2()")
   # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
   stopifnot(imager::spectrum(img) == 3)
   tmp <- img
+  my.rgb <- c(1,2,3) %>% set_names(c("red", "green", "blue"))
+  col.sel <- my.rgb[tolower(color)]
   # Horizontal line top:
-  tmp[x.top.left:(x.top.left+width-1), y.top.left:(y.top.left+stroke-1), 1, 1] <- 1
+  tmp[x.top.left:(x.top.left+width-1), y.top.left:(y.top.left+stroke-1), 1, col.sel] <- 1
   # Horizontal line bottom:
-  tmp[x.top.left:(x.top.left+width-1), (y.top.left+width-stroke+1):(y.top.left+width), 1, 1] <- 1
+  tmp[x.top.left:(x.top.left+width-1), (y.top.left+width-stroke+1):(y.top.left+width), 1, col.sel] <- 1
   # Vertical line left:
-  tmp[x.top.left:(x.top.left+stroke-1), y.top.left:(y.top.left+width-1), 1, 1] <- 1
+  tmp[x.top.left:(x.top.left+stroke-1), y.top.left:(y.top.left+width-1), 1, col.sel] <- 1
   # Vertical line right:
-  tmp[(x.top.left+width-stroke+1):(x.top.left+width-1), y.top.left:(y.top.left+width-1), 1, 1] <- 1
+  tmp[(x.top.left+width-stroke+1):(x.top.left+width-1), y.top.left:(y.top.left+width-1), 1, col.sel] <- 1
   tmp
 }
 
@@ -258,6 +260,7 @@ shinyServer(function(input, output, server, session) {
     files = NULL,
     img.list = NULL,
     img.list.crop = NULL,
+    img.list.correl = NULL,
     img.list.crop.correl = NULL,
     img.list.crop.rescale = NULL,
     composite.original = NULL,
@@ -269,11 +272,10 @@ shinyServer(function(input, output, server, session) {
     crop.size = 500,
     gap.size = 15,
     overview = NULL,
-    
     color.list = NULL,
     param_scalebar = parameters.scalebar,
-    img.list.crop.correl = NULL,
-    montage.max.width = 1500
+    montage.max.width = 1500,
+    correl.files = NULL
   )
   
   # ui input defaults ####
@@ -323,6 +325,7 @@ shinyServer(function(input, output, server, session) {
           hot_col(col="Axis", readOnly = TRUE, halign = "htLeft", format="text") %>%
           hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = names(rv$img.list.crop))
       })
+      rv$correl.files <- basename(rv$files$name)[1:2]
       
       
       ## Update radio button under selection pic: ####
@@ -462,7 +465,9 @@ shinyServer(function(input, output, server, session) {
       fil2 <- unlist(input$hot_correl_files$data[[2]][2])
       print(paste("... Correl file 1:", fil1))
       print(paste("... Correl file 2:", fil2))
+      rv$correl.files <- c(fil1, fil2)
       rv$img.list.crop.correl <- rv$img.list.crop[c(fil1, fil2)]
+      rv$img.list.correl <- rv$img.list[c(fil1, fil2)]
       print("... done here.")
     } # end if
   })
@@ -472,14 +477,28 @@ shinyServer(function(input, output, server, session) {
     print("observeEvent() - input$check_correl")
     # browser()
     if (input$check_correl == TRUE) {
-      
+      print(rv$correl.files)
       ## Correlation table ####
-      a <- lapply(rv$img.list.crop.correl, my.rescale) %>%
+      imgs.correl.complete <- rv$img.list[rv$correl.files]
+      imgs.correl.selection <- rv$img.list.crop[rv$correl.files]
+      if (input$radio_correl == "Selection") {
+        a <- lapply(imgs.correl.selection, my.rescale)
+      } else {
+        # Analyse entire image: 
+        a <- lapply(imgs.correl.complete, my.rescale)
+      }
+      # b <- purrr::map(a, as.matrix)
+      # c <- purrr::map(b, as.vector)
+      # d <- c %>% set_names(c("x", "y"))
+      print("Hello")
+      b <- a %>% 
         purrr::map(as.matrix) %>% 
         purrr::map(as.vector) %>% 
         set_names(c("x", "y"))
-      lm.results <- lm(y ~ x, data=a)
-      correl <- cor(a[[1]], a[[2]])
+      
+      lm.results <- lm(y ~ x, data=b)
+      correl <- cor(b[[1]], b[[2]])
+      print(paste("correl:", correl))
       df.correl <- data.frame(Slope = lm.results$coefficients[2],
                               Intercept = lm.results$coefficients[1],
                               Correl = correl)
@@ -541,12 +560,27 @@ shinyServer(function(input, output, server, session) {
             print("Overview autocontrast: FALSE")
             img.tmp <- rv$img.list[[overview.indx]]
           }
-          rv$overview <- img.tmp %>%
+          
+          frame.col <- ifelse(input$check_correl == "TRUE", "green", "red")
+          
+          # rv$overview <- img.tmp %>%
+          overview.tmp <- img.tmp %>%
             imager::add.color() %>%
             my.draw.rect2(., x.top.left=isolate(rv$crop.x),
                           y.top.left=isolate(rv$crop.y),
-                          width=isolate(rv$crop.size), stroke=10) %>%
+                          width=isolate(rv$crop.size), stroke=10,
+                          color=frame.col) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
+          
+          # if (input$check_correl == "TRUE") {
+          #   overview.tmp <- overview.tmp %>%
+          #     my.draw.rect2(., x.top.left=isolate(rv$crop.x),
+          #                   y.top.left=isolate(rv$crop.y),
+          #                   width=isolate(rv$crop.size), stroke=10,
+          #                   color="green")
+          # }
+          rv$overview <- overview.tmp
+          
           show("plot_overview"); show("overview_options")
           # show("radio_overview"); show("check_overview_autocontrast")
           show("correlation_panel")
