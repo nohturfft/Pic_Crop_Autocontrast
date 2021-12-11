@@ -22,6 +22,8 @@ library(purrr)
 # help(package="imager")
 # help(package="magick")
 
+options(shiny.maxRequestSize=10*1024^2)
+
 #-------------------------------------------------------------------------------!
 # Functions ####
 #-------------------------------------------------------------------------------!
@@ -309,7 +311,7 @@ shinyServer(function(input, output, server, session) {
       output$hot_files <- renderRHandsontable({
         fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "auto") %>% 
           hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
           hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
           hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
@@ -333,7 +335,16 @@ shinyServer(function(input, output, server, session) {
                          inline = TRUE, selected = "Pic2")
       
       ## Load images from file: ####
-      rv$img.list.original <- lapply(rv$files$datapath, imager::load.image) %>% 
+      # rv$img.list.original <- lapply(rv$files$datapath, imager::load.image) %>% 
+      #   set_names(basename(rv$files$name))
+      
+      rv$img.list.original <- lapply(rv$files$datapath, function(fi) {
+        a <- magick::image_read(fi)
+        b <- imager::magick2cimg(a)
+        c <- imager::grayscale(b)
+        c
+      }) %>% 
+        
         set_names(basename(rv$files$name))
       
       rv$img.list <- rv$img.list.original %>% 
@@ -478,6 +489,7 @@ shinyServer(function(input, output, server, session) {
     # browser()
     if (input$check_correl == TRUE) {
       print(rv$correl.files)
+      show("div_plot_autocontrast")
       ## Correlation table ####
       imgs.correl.complete <- rv$img.list[rv$correl.files]
       imgs.correl.selection <- rv$img.list.crop[rv$correl.files]
