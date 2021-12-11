@@ -24,12 +24,12 @@ shinyUI(
         useShinyjs(),
         column(width=3,
                align="left",
-               fileInput("files", "Choose PNG Files", accept = ".png", multiple=TRUE),
-               hidden(
-                 tags$div(id="file_count_error", class="error_msg",
-                          tags$p("Error. Please choose at least 2 files."))
-               ), # end hidden
-               rHandsontableOutput("hot_files"),
+                 fileInput("files", "Choose PNG Files", accept = c(".png", ".tif"), multiple=TRUE),
+                 hidden(
+                   tags$div(id="file_count_error", class="error_msg",
+                            tags$p("Error. Please choose at least 2 files."))
+                 ), # end hidden
+                 rHandsontableOutput("hot_files"),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
                                   numericInput('size', 'Pixel size selection', 650, min = 10, max = 1000),
@@ -119,6 +119,14 @@ shinyUI(
                                  hidden(
                                    tags$div(id="div_plot_autocontrast",
                                             plotOutput("plot_montage")
+                                   ) # end tags$div
+                                 ), # end hidden
+                                 style = "primary"
+                 ), # end bsCollapsePanel
+                 bsCollapsePanel("Correlation", 
+                                 hidden(
+                                   tags$div(id="div_plot_correlation",
+                                            plotOutput("plot_correlation")
                                    ) # end tags$div
                                  ), # end hidden
                                  style = "primary"
