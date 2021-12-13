@@ -853,7 +853,8 @@ shinyServer(function(input, output, server, session) {
       print("output$plot_montage (Plot final images)")
       if (!is.null(rv$composite.rescaled)) {
         # plot(rv$composite.rescaled, all=TRUE)
-        plot(rv$composite.with.info, all=TRUE)
+        # plot(rv$composite.with.info, all=TRUE)
+        plot(rv$composite.with.info)
       } # end if
     },
     height="auto"
@@ -866,9 +867,16 @@ shinyServer(function(input, output, server, session) {
     if (!is.null(rv$img.list.mask)) {
       # browser()
       print("output$plot_correlation (Plot masks)")
-      p <- ifelse(imager::width(rv$img.list.mask) <= rv$montage.max.width,
-                  rv$img.list.mask,
-                  EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width))
+      # p <- ifelse(imager::width(rv$img.list.mask) <= rv$montage.max.width,
+      #             rv$img.list.mask,
+      #             EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width))
+      if (imager::width(rv$img.list.mask) <= rv$montage.max.width) {
+        print("... Image size ok")
+        p <- rv$img.list.mask
+      } else {
+        print("... reducing image size.")
+        p <- EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width)
+      }
       print("... hello 1")
       output$plot_correlation <- renderPlot({
         plot(p, all=TRUE)
