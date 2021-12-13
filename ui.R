@@ -94,7 +94,11 @@ shinyUI(
                    checkboxInput("check_correl", "Calculate correlation", FALSE),
                    conditionalPanel(
                      condition = "input.check_correl == 1",
-                     radioButtons(inputId = "radio_correl", label = NULL, choices = c("Entire image", "Selection"), selected="Entire image", inline = TRUE),
+                     radioButtons(inputId = "radio_correl", label = NULL, choices = c("Entire image", "Selection"), selected="Selection", inline = TRUE),
+                     splitLayout(
+                       checkboxInput("check_mask", "Mask lowest quantile (%)", TRUE),
+                       numericInput("mask_percent", label=NULL, 20)
+                     ),
                      rHandsontableOutput("hot_correl_files"),
                      tableOutput("table_correl")
                    ) # end conditionalPanel

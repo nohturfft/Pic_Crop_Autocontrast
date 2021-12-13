@@ -265,6 +265,7 @@ shinyServer(function(input, output, server, session) {
     img.list.correl = NULL,
     img.list.crop.correl = NULL,
     img.list.crop.rescale = NULL,
+    img.list.mask = NULL,
     composite.original = NULL,
     composite.rescaled = NULL,
     composite.with.info = NULL,
@@ -489,31 +490,71 @@ shinyServer(function(input, output, server, session) {
     # browser()
     if (input$check_correl == TRUE) {
       print(rv$correl.files)
-      show("div_plot_autocontrast")
+      # show("div_plot_autocontrast")
+      show("div_plot_correlation")
       ## Correlation table ####
       imgs.correl.complete <- rv$img.list[rv$correl.files]
       imgs.correl.selection <- rv$img.list.crop[rv$correl.files]
       if (input$radio_correl == "Selection") {
-        a <- lapply(imgs.correl.selection, my.rescale)
+        imgs.correl.rescale <- lapply(imgs.correl.selection, my.rescale)
       } else {
         # Analyse entire image: 
-        a <- lapply(imgs.correl.complete, my.rescale)
+        imgs.correl.rescale <- lapply(imgs.correl.complete, my.rescale)
       }
-      # b <- purrr::map(a, as.matrix)
-      # c <- purrr::map(b, as.vector)
-      # d <- c %>% set_names(c("x", "y"))
-      print("Hello")
-      b <- a %>% 
-        purrr::map(as.matrix) %>% 
-        purrr::map(as.vector) %>% 
+      print("... apply threshold mask:")
+      # browser()
+      if (input$check_mask == "TRUE") {
+        # qtile.threshold <- paste0(input$mask_percent, "%")
+        qtile.threshold <- as.numeric(input$mask_percent) / 100
+        the.masks <- lapply(imgs.correl.rescale, function(im) {
+          qtile <- quantile(im, qtile.threshold)
+          # imager::threshold(img, thr=qtile, approx=FALSE)
+          im >= qtile
+        })
+        mask.combined <- the.masks[[1]] | the.masks[[2]]
+        rm(the.masks)
+      } else {
+        mask.combined <- array(rep(TRUE, imager::nPix(imgs.correl.rescale[[1]])),
+                               dim(imgs.correl.rescale[[1]]))
+      }
+      
+      imgs.correl <- lapply(imgs.correl.rescale, function(img) {
+        img[!mask.combined] <- NA
+        img
+      })
+      
+      print("... prepare masked images for output:")
+      rv$img.list.mask <- imager::imappend(list(as.cimg(mask.combined), imgs.correl[[1]]), axis = "x")
+      
+      print("... calculate correlations:")
+      b <- imgs.correl %>%
+        purrr::map(as.matrix) %>%
+        purrr::map(as.vector) %>%
         set_names(c("x", "y"))
       
-      lm.results <- lm(y ~ x, data=b)
-      correl <- cor(b[[1]], b[[2]])
-      print(paste("correl:", correl))
-      df.correl <- data.frame(Slope = lm.results$coefficients[2],
-                              Intercept = lm.results$coefficients[1],
-                              Correl = correl)
+      names(b) <- c("x", "y")
+      
+      
+      
+      # Pearson correlation coefficient:
+      pcc <- cor(b[[1]], b[[2]],
+                    use = "pairwise.complete.obs")
+      print(paste("pcc:", pcc))
+      
+      # Manders Overlap Coefficient
+      moc <- sum(b[[1]] * b[[2]], na.rm=TRUE) / sqrt(sum(b[[1]]^2, na.rm=TRUE) * sum(b[[2]]^2, na.rm=TRUE))
+      print(paste("moc:", moc))
+      
+      
+      # Calculating linear model takes very long:
+      # lm.results <- lm(y ~ x, data=b)
+      # df.correl <- data.frame(Slope = lm.results$coefficients[2],
+      #                         Intercept = lm.results$coefficients[1],
+      #                         Correl = correl)
+      
+      df.correl <- data.frame(pcc = pcc,
+                              moc = moc)
+      
       print(df.correl)
       output$table_correl <- renderTable(df.correl, digits=4)
       
@@ -787,7 +828,7 @@ shinyServer(function(input, output, server, session) {
   }) # end observeEvent
   
   output$plot_overview <- renderPlot({
-    # Output overview plot ####
+    # Output plot: overview plot ####
     print("output$plot_overview")
     if (!is.null(rv$overview)) {
       par(mar=c(0,0,0,0))
@@ -797,7 +838,7 @@ shinyServer(function(input, output, server, session) {
   ) # end renderPlot
   
   output$plot_originals <- renderPlot({
-    # Output plot cropped images ####
+    # Output plot: cropped images ####
     print("output$plot_originals")
     if (!is.null(rv$composite.original)) {
       par(mar=c(0,0,0,0))
@@ -808,7 +849,7 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     output$plot_montage <- renderPlot({
-      # Output plot final images ####
+      # Output plot: final montage ####
       print("output$plot_montage (Plot final images)")
       if (!is.null(rv$composite.rescaled)) {
         # plot(rv$composite.rescaled, all=TRUE)
@@ -818,6 +859,23 @@ shinyServer(function(input, output, server, session) {
     height="auto"
     ) # end renderPlot
   })
+  
+  
+  observe({
+    # Output plot: masked selections ####
+    if (!is.null(rv$img.list.mask)) {
+      # browser()
+      print("output$plot_correlation (Plot masks)")
+      p <- ifelse(imager::width(rv$img.list.mask) <= rv$montage.max.width,
+                  rv$img.list.mask,
+                  EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width))
+      print("... hello 1")
+      output$plot_correlation <- renderPlot({
+        plot(p, all=TRUE)
+      })
+      print("... hello 2")
+    } # end if
+  }) # end observe
   
   
   
