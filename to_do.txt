@@ -5,3 +5,5 @@ Arrows
 Get file creation dates and add to info panel
 EBImage::tile() function to create multi-row montage?
 Add title to montage
+Include percent masked in correlation table
+Add button to save correlation data
