@@ -312,12 +312,13 @@ shinyServer(function(input, output, server, session) {
       output$hot_files <- renderRHandsontable({
         fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                        highlightCol = TRUE, highlightRow = TRUE, overflow = "auto") %>% 
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% # overflow = "auto"
           hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
           hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
           hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
         fhot2
       })
+    
       
       ## rhandsontable: correl files ####
       output$hot_correl_files <- renderRHandsontable({
