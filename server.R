@@ -96,6 +96,8 @@ compose.pics <- function(pic.list, pic.gap, width.max) {
   
   if (imager::width(ff) > width.max) {
     res <- EBImage::resize(x=ff, w=width.max)
+  } else {
+    res <- ff
   } # end if
   
   res
@@ -214,9 +216,11 @@ make.file.info.panel <- function(basename.vector, composite, txt.size, padding) 
 
 make.selection.info.panel <- function(x, y, size, composite, txt.size, padding) {
   print("--- Function: make.selection.info.panel()")
-  panel.height <- txt.size + padding + padding
+  # panel.height <- txt.size + padding + padding
+  panel.height <- (2* txt.size) + (2 * padding)
   panel.width <- imager::width(composite)
-  txt <- paste0("Coord.x: ", x, "; Coord.y: ", y, " (", size, " X ", size, " px)")
+  txt <- paste0("Coord.x: ", x, "; Coord.y: ", y, " (", size, " X ", size, " px)", "\n",
+                "Montage width: ", panel.width, " px")
   
   pic <- imager::imfill(x=panel.width, y=panel.height, z=1, val = "white") %>% 
     imager::draw_text(., x=0, y=padding, text = txt, color="gray40", fsize=txt.size) %>% 
@@ -244,7 +248,7 @@ scalebar.color.choices <- c("white", "black")
 
 default.parameters <- list(
   bar.height = 12,
-  text.height = 20,
+  text.height = 30,
   bar.width.um = 20,
   objective = mic.objectives[3],
   px.per.um = 3.424,
@@ -252,7 +256,7 @@ default.parameters <- list(
   bar.color = scalebar.color.choices[2],
   bar.offset = 20,
   selection.px = 700,
-  montage.max.width = 2000
+  montage.max.width = 1800
 )
 
 #-------------------------------------------------------------------------------!
@@ -355,6 +359,9 @@ shinyServer(function(input, output, server, session) {
       
       rv$img.list <- rv$img.list.original %>% 
         set_names(names(rv$img.list.original))
+      
+      updateNumericInput(session=session, "coord.x", value = 1)
+      updateNumericInput(session=session, "coord.y", value = 1)
     } # end if
     
   }) # end observeEvent(input$files)
@@ -707,10 +714,7 @@ shinyServer(function(input, output, server, session) {
       } # end if
     } # end if
     
-    
-    # if (imager::width(rv$composite.rescaled) > max.width) {
-    #   rv$composite.rescaled <- EBImage::resize(x=rv$composite.rescaled, w=max.width)
-    # } # end if
+    rv$montage.max.width <- input$montage_max_width
     
     print("... done here (05).")
   }) # end observe
@@ -727,11 +731,20 @@ shinyServer(function(input, output, server, session) {
           print("... scalebar TRUE")
           if (!any(sapply(rv$param_scalebar, is.na))) {
             ## Scalebar panel: ####
+            img.panel.count <- length(rv$img.list.crop.rescale)
+            resize.factor <- rv$montage.max.width / ((rv$crop.size * img.panel.count) + (rv$gap.size * (img.panel.count-1)))
+            print(paste("... rv$montage.max.width:", rv$montage.max.width))
+            print(paste("... img.panel.count:", img.panel.count))
+            print(paste("... rv$crop.size:", rv$crop.size))
+            print(paste("... px.per.um:", rv$param_scalebar$px.per.um))
+            print(paste("... resize.factor:", resize.factor))
+            adjusted.px.per.um <- rv$param_scalebar$px.per.um * resize.factor
+            print(paste("... adjusted.px.per.um:", adjusted.px.per.um))
             scalebar.panel <- make.scalebar.panel(composite=rv$composite.rescaled,
                                           bar.height=rv$param_scalebar$bar.height,
                                           txt.size = rv$param_scalebar$text.height,
                                           breite.um=rv$param_scalebar$bar.width.um,
-                                          px.per.um=rv$param_scalebar$px.per.um,
+                                          px.per.um=(rv$param_scalebar$px.per.um * resize.factor),
                                           txt="Text here",
                                           farbe=rv$param_scalebar$bar.color,
                                           padding=rv$param_scalebar$padding,
