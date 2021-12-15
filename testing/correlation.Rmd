@@ -12,9 +12,14 @@ library(magick)
 
 File paths:
 ```{r}
+# fils <- c(
+#   "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_GFP.tif",
+#   "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_RFP.tif"
+# )
+
 fils <- c(
-  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_GFP.tif",
-  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_RFP.tif"
+  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_005/ANG260_20x_Well_005_F_1/ANG260_20x_Well_005a_GFP.tif",
+  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_005/ANG260_20x_Well_005_F_1/ANG260_20x_Well_005a_RFP.tif"
 )
 ```
 
@@ -70,10 +75,7 @@ lapply(masked, function(x) {sum(is.na(x))})
 ```
 
 ```{r}
-z <- EBImage::abind(masked, along=1) %>% as.cimg
-plot(z)
-# plot(masked[[1]])
-rm(z)
+plot(as.cimg(EBImage::abind(masked, along=1)))
 ```
 
 ```{r}
@@ -124,7 +126,7 @@ rm(tmp1)
 
 
 ```{r}
-qtile.threshold <- 0.7
+qtile.threshold <- 0.5
 masked.crop <- lapply(rescale.crop, function(im) {
   qtile <- quantile(im, qtile.threshold)
   im[im < qtile] <- NA
@@ -157,8 +159,7 @@ cor(masked.crop[[1]], masked.crop[[2]], use="pairwise.complete.obs")
 
 More complicated:
 
-* in each crop set NA pixels to zero  
-* then make those pixels NA where both images are zero
+* in each masked crop set NA pixels to zero  
 * calculate correlation again
 
 ```{r}
@@ -166,11 +167,51 @@ masked.crop2 <- lapply(masked.crop, function(im) {
   im[is.na(im)] <- 0
   im
 })
+# lapply(masked.crop2, class) # "cimg"         "imager_array" "numeric"
+plot(as.cimg(EBImage::abind(masked.crop2, along=1)))
+```
+```{r}
+cor(masked.crop2[[1]], masked.crop2[[2]], use="pairwise.complete.obs")
+```
+
+OR-combine masks:
+```{r}
+mask.combined.OR <- as.matrix(masked.crop2[[1]] > 0 | masked.crop2[[2]] > 0)
+class(mask.combined.OR) # "matrix" "array" 
+dim(mask.combined.OR) # 600 600
+typeof(mask.combined.OR) # "logical"
+```
+
+```{r}
+imgs.crop.mask.or <- lapply(masked.crop2, function(im) {
+  a <- im[,]
+  a[!mask.combined.OR] <- NA
+  as.cimg(a)
+})
+plot(as.cimg(EBImage::abind(imgs.crop.mask.or, along=1)))
+```
+```{r}
+sum(imgs.crop.mask.or[[1]] == 0, na.rm=TRUE)
+sum(imgs.crop.mask.or[[2]] == 0, na.rm=TRUE)
+sum(imgs.crop.mask.or[[1]] == 0 & imgs.crop.mask.or[[2]] == 0, na.rm=TRUE)
+```
+
+
+```{r}
+cor(imgs.crop.mask.or[[1]], imgs.crop.mask.or[[2]], use="pairwise.complete.obs")
+```
+
+
+```{r}
 mask.combined <- as.matrix(masked.crop2[[1]] > 0 & masked.crop2[[2]] > 0)
 class(mask.combined) # "matrix" "array" 
 dim(mask.combined) # 600 600
 typeof(mask.combined) # "logical"
 ```
+
+
+
+
 
 ```{r}
 masked.crop3 <- lapply(rescale.crop, function(im) {
@@ -211,3 +252,6 @@ class(mask.combined) # "matrix" "array"
 dim(mask.combined) # 600 600
 typeof(mask.combined) # "logical"
 ```
+
+
+
