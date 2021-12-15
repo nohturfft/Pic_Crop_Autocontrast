@@ -7,3 +7,4 @@ EBImage::tile() function to create multi-row montage?
 Add title to montage
 Include percent masked in correlation table
 Add button to save correlation data
+Fix error when montage max width is greater than actual composite
