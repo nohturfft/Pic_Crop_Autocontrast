@@ -242,15 +242,17 @@ pixels.per.micron <- c(0.687, 3.424, 6.895) %>%
   magrittr::set_names(c("4x", "20x", "40x"))
 scalebar.color.choices <- c("white", "black")
 
-parameters.scalebar <- list(
+default.parameters <- list(
   bar.height = 12,
-  text.height = 14,
+  text.height = 20,
   bar.width.um = 20,
   objective = mic.objectives[3],
   px.per.um = 3.424,
   padding = 10,
   bar.color = scalebar.color.choices[2],
-  bar.offset = 20
+  bar.offset = 20,
+  selection.px = 700,
+  montage.max.width = 2000
 )
 
 #-------------------------------------------------------------------------------!
@@ -276,20 +278,22 @@ shinyServer(function(input, output, server, session) {
     gap.size = 15,
     overview = NULL,
     color.list = NULL,
-    param_scalebar = parameters.scalebar,
+    param_scalebar = default.parameters,
     montage.max.width = 1500,
     correl.files = NULL
   )
   
   # ui input defaults ####
+  updateNumericInput(session=session, "size", value = default.parameters$selection.px)
+  updateNumericInput(session=session, "montage_max_width", value = default.parameters$montage.max.width)
   updateSelectInput(session=session, "scalebar_objective", choices = mic.objectives, selected=mic.objectives[3])
-  updateNumericInput(session=session, "scalebar_px_per_um", value = parameters.scalebar$px.per.um)
-  updateNumericInput(session=session, "scalebar_microns", value = parameters.scalebar$bar.width)
-  updateNumericInput(session=session, "scalebar_height", value = parameters.scalebar$bar.height)
-  updateNumericInput(session=session, "scalebar_txt_height", value = parameters.scalebar$text.height)
-  updateNumericInput(session=session, "scalebar_padding", value = parameters.scalebar$padding)
+  updateNumericInput(session=session, "scalebar_px_per_um", value = default.parameters$px.per.um)
+  updateNumericInput(session=session, "scalebar_microns", value = default.parameters$bar.width)
+  updateNumericInput(session=session, "scalebar_height", value = default.parameters$bar.height)
+  updateNumericInput(session=session, "scalebar_txt_height", value = default.parameters$text.height)
+  updateNumericInput(session=session, "scalebar_padding", value = default.parameters$padding)
   updateSelectInput(session=session, "scalebar_color", choices = scalebar.color.choices, selected=scalebar.color.choices[2])
-  updateNumericInput(session=session, "scalebar_offset", value = parameters.scalebar$bar.offset)
+  updateNumericInput(session=session, "scalebar_offset", value = default.parameters$bar.offset)
   
   # input$files ####
   observeEvent(input$files, {
