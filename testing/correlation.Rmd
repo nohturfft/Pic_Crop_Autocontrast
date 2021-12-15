@@ -1,0 +1,213 @@
+---
+title: "Image correlation"
+output: html_notebook
+---
+
+```{r}
+library(imager)
+library(magrittr)
+library(dplyr)
+library(magick)
+```
+
+File paths:
+```{r}
+fils <- c(
+  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_GFP.tif",
+  "~/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG260/ANG260_Imgs/ANG260_Ni_20x_2021_12_10/20x/ANG260_20x_Well_003/ANG260_20x_Well_003_F_1/ANG260_20x_Well_003a_RFP.tif"
+)
+```
+
+Loasd files and convert to grayscale:
+```{r}
+imgs.1 <- lapply(fils, function(fi) {
+        a <- magick::image_read(fi)
+        b <- imager::magick2cimg(a)
+        b
+})
+sapply(imgs.1, class)
+```
+
+```{r}
+# plot(imgs.1[[1]])
+x <- EBImage::abind(imgs.1, along=1) %>% as.cimg
+plot(x)
+```
+
+
+
+Rescale / autocontrast:
+```{r}
+my.rescale <- function(imge) {
+  # print("--- Function: my.rescale()")
+  (imge - min(imge)) / (max(imge) - min(imge))
+}
+```
+
+
+```{r}
+imgs.rescale <- lapply(imgs.1, function(imge) {
+  my.rescale(imge)
+})
+y <- EBImage::abind(imgs.rescale, along=1) %>% as.cimg
+plot(y)
+rm(y)
+```
+Where pixels are below threshold, set to zero:
+```{r}
+qtile.threshold <- 0.50
+masked <- lapply(imgs.rescale, function(im) {
+  qtile <- quantile(im, qtile.threshold)
+  im[im < qtile] <- NA
+  im
+})
+
+lapply(imgs.rescale, dim)
+lapply(masked, dim)
+
+lapply(imgs.rescale, function(x) {sum(is.na(x))})
+lapply(masked, function(x) {sum(is.na(x))})
+```
+
+```{r}
+z <- EBImage::abind(masked, along=1) %>% as.cimg
+plot(z)
+# plot(masked[[1]])
+rm(z)
+```
+
+```{r}
+my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5, color="green") {
+  # print("--- Function: my.draw.rect2()")
+  # img[x.left:x.right, y.top:y.top+stroke-1] <- 1
+  stopifnot(imager::spectrum(img) == 3)
+  tmp <- img
+  my.rgb <- c(1,2,3) %>% set_names(c("red", "green", "blue"))
+  col.sel <- my.rgb[tolower(color)]
+  # Horizontal line top:
+  tmp[x.top.left:(x.top.left+width-1), y.top.left:(y.top.left+stroke-1), 1, col.sel] <- 1
+  # Horizontal line bottom:
+  tmp[x.top.left:(x.top.left+width-1), (y.top.left+width-stroke+1):(y.top.left+width), 1, col.sel] <- 1
+  # Vertical line left:
+  tmp[x.top.left:(x.top.left+stroke-1), y.top.left:(y.top.left+width-1), 1, col.sel] <- 1
+  # Vertical line right:
+  tmp[(x.top.left+width-stroke+1):(x.top.left+width-1), y.top.left:(y.top.left+width-1), 1, col.sel] <- 1
+  tmp
+}
+```
+
+
+```{r}
+rct <- imager::add.color(masked[[2]]) %>% 
+  my.draw.rect2(img=., x.top.left=1, y.top.left=1400, width=600, stroke=20, color="red")
+plot(rct)
+```
+
+```{r}
+my.crop <- function(pic, breite, start.x, start.y) {
+  # print("--- Function: my.crop()")
+  imager::imsub(pic,
+                x %inr% c(start.x, start.x + breite - 1),
+                y %inr% c(start.y, start.y + breite - 1))
+}
+```
+
+```{r}
+rescale.crop <- lapply(imgs.1, function(im) {
+  a <- my.crop(im, breite=600, start.x=1, start.y=1400)
+  my.rescale(a)
+})
+tmp1 <- EBImage::abind(rescale.crop, along=1) %>% as.cimg
+plot(tmp1)
+rm(tmp1)
+```
+
+
+```{r}
+qtile.threshold <- 0.7
+masked.crop <- lapply(rescale.crop, function(im) {
+  qtile <- quantile(im, qtile.threshold)
+  im[im < qtile] <- NA
+  im
+})
+tmp2 <- EBImage::abind(masked.crop, along=1) %>% as.cimg
+plot(tmp2)
+rm(tmp2)
+```
+
+Correlation cropped rescale originals (full size):
+```{r}
+cor(imgs.rescale[[1]], imgs.rescale[[2]], use="pairwise.complete.obs")
+```
+
+Correlation masked images (full size):
+```{r}
+cor(masked[[1]], masked[[2]], use="pairwise.complete.obs")
+```
+
+Correlation cropped rescale originals:
+```{r}
+cor(rescale.crop[[1]], rescale.crop[[2]], use="pairwise.complete.obs")
+```
+
+Correlation cropped and masked images:
+```{r}
+cor(masked.crop[[1]], masked.crop[[2]], use="pairwise.complete.obs")
+```
+
+More complicated:
+
+* in each crop set NA pixels to zero  
+* then make those pixels NA where both images are zero
+* calculate correlation again
+
+```{r}
+masked.crop2 <- lapply(masked.crop, function(im) {
+  im[is.na(im)] <- 0
+  im
+})
+mask.combined <- as.matrix(masked.crop2[[1]] > 0 & masked.crop2[[2]] > 0)
+class(mask.combined) # "matrix" "array" 
+dim(mask.combined) # 600 600
+typeof(mask.combined) # "logical"
+```
+
+```{r}
+masked.crop3 <- lapply(rescale.crop, function(im) {
+  a <- im[,]
+  a[!mask.combined] <- NA
+  as.cimg(a)
+})
+# lapply(masked.crop3, class) # cimg"         "imager_array" "numeric"   
+tmp3 <- EBImage::abind(masked.crop3, along=1) %>% as.cimg
+plot(tmp3)
+rm(tmp3)
+# plot(masked.crop3[[1]])
+# plot(masked.crop3[[2]])
+```
+
+Now correlation:
+```{r}
+cor(masked.crop3[[1]], masked.crop3[[2]], use="pairwise.complete.obs")
+```
+
+Same results - of course, duh !
+
+
+
+More complicated (2):
+
+* in each crop set NA pixels to zero  
+* then make those pixels NA where both images are zero
+* calculate correlation again
+
+```{r}
+masked.crop2 <- lapply(masked.crop, function(im) {
+  im[is.na(im)] <- 0
+  im
+})
+mask.combined <- as.matrix(masked.crop2[[1]] > 0 & masked.crop2[[2]] > 0)
+class(mask.combined) # "matrix" "array" 
+dim(mask.combined) # 600 600
+typeof(mask.combined) # "logical"
+```
