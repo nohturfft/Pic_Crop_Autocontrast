@@ -1,3 +1,4 @@
+Correlation: mask images individually!
 Predict channel colors
 Predict output file name
 Image overlay
