@@ -58,6 +58,7 @@ y <- EBImage::abind(imgs.rescale, along=1) %>% as.cimg
 plot(y)
 rm(y)
 ```
+
 Where pixels are below threshold, set to zero:
 ```{r}
 qtile.threshold <- 0.50
@@ -77,6 +78,30 @@ lapply(masked, function(x) {sum(is.na(x))})
 ```{r}
 plot(as.cimg(EBImage::abind(masked, along=1)))
 ```
+
+Generate a series of red channel images for Greg:
+```{r}
+mask.series <- lapply(c(0, 30, 50, 70), function(pc, img) {
+  qtile.threshold <- pc/100
+  qtile <- quantile(img, qtile.threshold)
+  img[img < qtile] <- NA
+  img
+}, img = imgs.rescale[[2]])
+plot(as.cimg(EBImage::abind(mask.series, along=1)))
+```
+```{r}
+# getwd()
+# lapply(mask.series, class)
+for (i in seq_along(mask.series)) {
+  out.file <- paste0("red_channel_", i, ".png")
+  print(out.file)
+  img <- mask.series[[i]]
+  img[is.na(img)] <- 1
+  imager::save.image(img, out.file)
+}
+```
+
+
 
 ```{r}
 my.draw.rect2 <- function(img, x.top.left, y.top.left, width, stroke=5, color="green") {
