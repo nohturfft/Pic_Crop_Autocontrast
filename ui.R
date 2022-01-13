@@ -30,6 +30,7 @@ shinyUI(
                             tags$p("Error. Please choose at least 2 files."))
                  ), # end hidden
                  rHandsontableOutput("hot_files"),
+               tableOutput("summary_table"),
                wellPanel(id="selection_well", 
                          tags$div(id="numericinput_selection",
                                   numericInput('size', 'Pixel size selection', 650, min = 10, max = 1000),
