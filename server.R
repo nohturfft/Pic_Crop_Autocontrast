@@ -491,7 +491,8 @@ shinyServer(function(input, output, server, session) {
         if (hot.col == 2) {
           file.selected <- input$hot_files$changes$changes[[1]][[4]]
           print(paste("... file selected:", file.selected))
-          indx.img.selected <- which(basename(rv$files$name) == file.selected)
+          # indx.img.selected <- which(basename(rv$files$name) == file.selected)
+          indx.img.selected <- which(squeeze_filename(rv$files$name) == file.selected)
           print(paste("... indx.img.selected:", indx.img.selected))
           rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
         } else if (hot.col == 3) {
@@ -509,11 +510,18 @@ shinyServer(function(input, output, server, session) {
     print("observeEvent() - input$hot_correl_files")
     # browser()
     if (!is.null(rv$img.list.crop)) {
-      fil1 <- unlist(input$hot_correl_files$data[[1]][2])
-      fil2 <- unlist(input$hot_correl_files$data[[2]][2])
-      print(paste("... Correl file 1:", fil1))
-      print(paste("... Correl file 2:", fil2))
+      squeezed.file.1 <- unlist(input$hot_correl_files$data[[1]][2])
+      squeezed.file.2 <- unlist(input$hot_correl_files$data[[2]][2])
+      print(paste("... Squeezed correl file 1:", squeezed.file.1))
+      print(paste("... Squeezed correl file 2:", squeezed.file.2))
+      
+      a1 <- which(squeeze_filename(names(rv$img.list.crop)) == squeezed.file.1)
+      a2 <- which(squeeze_filename(names(rv$img.list.crop)) == squeezed.file.2)
+      fil1 <- names(rv$img.list.crop)[a1]
+      fil2 <- names(rv$img.list.crop)[a2]
+      
       rv$correl.files <- c(fil1, fil2)
+      
       rv$img.list.crop.correl <- rv$img.list.crop[c(fil1, fil2)]
       rv$img.list.correl <- rv$img.list[c(fil1, fil2)]
       print("... done here.")
@@ -605,8 +613,8 @@ shinyServer(function(input, output, server, session) {
       #                         Intercept = lm.results$coefficients[1],
       #                         Correl = correl)
       
-      df.correl <- data.frame(pcc = pcc,
-                              moc = moc)
+      df.correl <- data.frame(PCC = pcc,
+                              MOC = moc)
       
       print(df.correl)
       output$table_correl <- renderTable(df.correl, digits=4)
