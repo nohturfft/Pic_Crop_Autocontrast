@@ -431,19 +431,6 @@ shinyServer(function(input, output, server, session) {
   })
   
   
-  # input$apply_max_width ####
-  # observeEvent(input$apply_max_width, {
-  #   print("observeEvent(input$apply_max_width)")
-  #   # browser()
-  #   print(class(rv$composite.rescaled))
-  #   current.width <- imager::width(rv$composite.rescaled)
-  #   if (imager::width(rv$composite.rescaled) >= input$montage_max_width) {
-  #     rv$composite.rescaled <- EBImage::resize(x=EBImage::as.Image(isolate(rv$composite.with.info)),
-  #                                              w=input$montage_max_width)
-  #   } # end if
-  #   print("... done here. (observeEvent(input$apply_max_width))")
-  # }) # end observeEvent
-  
   
   # input$img_click ####
   observeEvent(input$img_click, {
@@ -551,12 +538,6 @@ shinyServer(function(input, output, server, session) {
       
       
       if (input$check_mask == "TRUE") {
-        # qtile.threshold <- as.numeric(input$mask_percent) / 100
-        # the.masks <- lapply(imgs.correl.rescale, function(im) {
-        #   qtile <- quantile(im, qtile.threshold)
-        #   # imager::threshold(img, thr=qtile, approx=FALSE)
-        #   im >= qtile
-        # })
         
         # Calculate thresholds:
         threshold.method <- "IJDefault"
@@ -606,13 +587,6 @@ shinyServer(function(input, output, server, session) {
       moc <- sum(b[[1]] * b[[2]], na.rm=TRUE) / sqrt(sum(b[[1]]^2, na.rm=TRUE) * sum(b[[2]]^2, na.rm=TRUE))
       print(paste("moc:", moc))
       
-      
-      # Calculating linear model takes very long:
-      # lm.results <- lm(y ~ x, data=b)
-      # df.correl <- data.frame(Slope = lm.results$coefficients[2],
-      #                         Intercept = lm.results$coefficients[1],
-      #                         Correl = correl)
-      
       df.correl <- data.frame(PCC = pcc,
                               MOC = moc)
       
@@ -623,9 +597,6 @@ shinyServer(function(input, output, server, session) {
       print("Correlation checkbox FALSE")
     } # end if
   }) # end observeEvent(input$check_correl)
-  
-  
-  
   
   
   # input$scalebar_objective ####
@@ -686,13 +657,6 @@ shinyServer(function(input, output, server, session) {
                           color=frame.col) %>%
             imager::resize(., size_x = new.width, size_y=new.height)
           
-          # if (input$check_correl == "TRUE") {
-          #   overview.tmp <- overview.tmp %>%
-          #     my.draw.rect2(., x.top.left=isolate(rv$crop.x),
-          #                   y.top.left=isolate(rv$crop.y),
-          #                   width=isolate(rv$crop.size), stroke=10,
-          #                   color="green")
-          # }
           rv$overview <- overview.tmp
           
           show("plot_overview"); show("overview_options")
@@ -934,9 +898,6 @@ shinyServer(function(input, output, server, session) {
     if (!is.null(rv$img.list.mask)) {
       # browser()
       print("output$plot_correlation (Plot masks)")
-      # p <- ifelse(imager::width(rv$img.list.mask) <= rv$montage.max.width,
-      #             rv$img.list.mask,
-      #             EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width))
       if (imager::width(rv$img.list.mask) <= rv$montage.max.width) {
         print("... Image size ok")
         p <- rv$img.list.mask
