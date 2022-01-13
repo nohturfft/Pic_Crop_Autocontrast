@@ -981,7 +981,7 @@ shinyServer(function(input, output, server, session) {
         p <- EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width)
       }
       print("... hello 1")
-      output$plot_correlation <- renderPlot({
+      output$plot_masks <- renderPlot({
         plot(p, all=TRUE)
       })
       print("... hello 2")
