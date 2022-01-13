@@ -344,20 +344,20 @@ shinyServer(function(input, output, server, session) {
       output$hot_files <- renderRHandsontable({
         fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = squeeze_filename(rv$files$name), Color = color.choices[1]) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                        highlightCol = TRUE, highlightRow = TRUE, overflow = "hidden") %>% # overflow = "auto"
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% # visible or dropdown doesn't work!
           hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
           hot_col(col="File", readOnly = FALSE, type = "dropdown", source = squeeze_filename(rv$files$name)) %>% 
           hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
         fhot2
       })
-    
+      # browser()
       
       ## rhandsontable: correl files ####
       output$hot_correl_files <- renderRHandsontable({
         cor.files <- basename(rv$files$name)[1:2]
         hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"), File = squeeze_filename(names(rv$img.list.crop)[1:2])) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% # visible or dropdown doesn't work!
           hot_col(col="Axis", readOnly = TRUE, halign = "htLeft", format="text") %>%
           hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = squeeze_filename(names(rv$img.list.crop)))
       })
