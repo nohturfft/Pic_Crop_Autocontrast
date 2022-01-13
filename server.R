@@ -237,6 +237,30 @@ output.filename <- function(input.basename) {
   new.name
 } # end fct output.filename()
 
+# x <- c(
+#   "/Users/axelnohturfft/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG261/ANG261_Data_tif/ANG261_Run_060_Well_A1_Sample_01/ANG261_Run_0060_Well_A1_Sample_01_XY01C1.tif",
+#   "/Users/axelnohturfft/Dropbox/Data/SREBP_SCAP/Genesis_Project/Genesis_Microscopy/ANG261/ANG261_Data_tif/ANG261_Run_060_Well_A1_Sample_01/ANG261_Run_0060_Well_A1_Sample_01_XY01C2.tif"
+# )
+squeeze_filename <- function(the.paths, max.char=24) {
+  print("--- Function: squeeze_filename()")
+  max.char.chunk <- ((max.char/2)-1)
+  # max.char.chunk
+  a <- basename(the.paths)
+  b <- sapply(a, function(bn) {
+    if (nchar(bn) > max.char) {
+      chunk1 <- substr(bn, 1, max.char.chunk)
+      chunk2 <- substr(bn, (nchar(bn)-max.char.chunk+1), nchar(bn))
+      new.basename <- paste0(chunk1, "..", chunk2)
+    } else {
+      new.basename <- bn
+    }
+    new.basename
+  })
+ unname(b)
+}
+# squeeze_filename(x)
+# debug(squeeze_filename)
+
 #-------------------------------------------------------------------------------!
 # Defaults ####
 #-------------------------------------------------------------------------------!
@@ -318,11 +342,11 @@ shinyServer(function(input, output, server, session) {
       
       ## rhandsontable: files & colors ####
       output$hot_files <- renderRHandsontable({
-        fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = basename(rv$files$name), Color = color.choices[1]) %>% 
+        fhot2 <- data.frame(Pic = seq_len(nrow(rv$files)), File = squeeze_filename(rv$files$name), Color = color.choices[1]) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
-                        highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% # overflow = "auto"
+                        highlightCol = TRUE, highlightRow = TRUE, overflow = "hidden") %>% # overflow = "auto"
           hot_col(col="Pic", readOnly = TRUE, halign = "htCenter", format="text") %>% 
-          hot_col(col="File", readOnly = FALSE, type = "dropdown", source = basename(rv$files$name)) %>% 
+          hot_col(col="File", readOnly = FALSE, type = "dropdown", source = squeeze_filename(rv$files$name)) %>% 
           hot_col(col="Color", readOnly = FALSE, type = "dropdown", source = color.choices)
         fhot2
       })
@@ -331,11 +355,11 @@ shinyServer(function(input, output, server, session) {
       ## rhandsontable: correl files ####
       output$hot_correl_files <- renderRHandsontable({
         cor.files <- basename(rv$files$name)[1:2]
-        hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"), File = names(rv$img.list.crop)[1:2]) %>% 
+        hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"), File = squeeze_filename(names(rv$img.list.crop)[1:2])) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
                         highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% 
           hot_col(col="Axis", readOnly = TRUE, halign = "htLeft", format="text") %>%
-          hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = names(rv$img.list.crop))
+          hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = squeeze_filename(names(rv$img.list.crop)))
       })
       rv$correl.files <- basename(rv$files$name)[1:2]
       
