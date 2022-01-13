@@ -351,15 +351,18 @@ shinyServer(function(input, output, server, session) {
         fhot2
       })
       # browser()
+    
       
       ## rhandsontable: correl files ####
       output$hot_correl_files <- renderRHandsontable({
-        cor.files <- basename(rv$files$name)[1:2]
-        hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"), File = squeeze_filename(names(rv$img.list.crop)[1:2])) %>% 
+        # cor.files <- basename(rv$files$name)[1:2]
+        hot.correl <- data.frame(Axis = c("X Axis", "Y Axis"),
+                                 File = squeeze_filename(names(rv$img.list.crop)[1:2])) %>% 
           rhandsontable(rowHeaders=NULL, width=400, useTypes = FALSE, stretchH = "all", selectCallback = TRUE,
                         highlightCol = TRUE, highlightRow = TRUE, overflow = "visible") %>% # visible or dropdown doesn't work!
           hot_col(col="Axis", readOnly = TRUE, halign = "htLeft", format="text") %>%
           hot_col(col="File", readOnly = FALSE, type = "dropdown", format="text", source = squeeze_filename(names(rv$img.list.crop)))
+        hot.correl
       })
       rv$correl.files <- basename(rv$files$name)[1:2]
       
@@ -368,21 +371,25 @@ shinyServer(function(input, output, server, session) {
       updateRadioButtons(session=session, inputId = "radio_overview", choices = paste0("Pic", seq_along(rv$files$datapath)),
                          inline = TRUE, selected = "Pic2")
       
-      ## Load images from file: ####
-      # rv$img.list.original <- lapply(rv$files$datapath, imager::load.image) %>% 
-      #   set_names(basename(rv$files$name))
-      
       rv$img.list.original <- lapply(rv$files$datapath, function(fi) {
         a <- magick::image_read(fi)
         b <- imager::magick2cimg(a)
         c <- imager::grayscale(b)
         c
       }) %>% 
-        
         set_names(basename(rv$files$name))
       
       rv$img.list <- rv$img.list.original %>% 
         set_names(names(rv$img.list.original))
+      
+      output$summary_table <- renderTable({
+        data.frame(
+          Pic = seq_along(rv$img.list.original),
+          Intensity.Min = sapply(rv$img.list.original, function(x) {min(x, na.rm=TRUE)}),
+          Intensity.Max = sapply(rv$img.list.original, function(x) {max(x, na.rm=TRUE)}),
+          Missing = sapply(rv$img.list.original, function(x) {sum(is.na(x))})
+        )
+      })
       
       updateNumericInput(session=session, "coord.x", value = 1)
       updateNumericInput(session=session, "coord.y", value = 1)
@@ -524,24 +531,26 @@ shinyServer(function(input, output, server, session) {
       # show("div_plot_autocontrast")
       show("div_plot_correlation")
       ## Correlation table ####
-      imgs.correl.complete <- rv$img.list[rv$correl.files]
-      imgs.correl.selection <- rv$img.list.crop[rv$correl.files]
+      # imgs.correl.complete <- rv$img.list[rv$correl.files]
+      # imgs.correl.selection <- rv$img.list.crop[rv$correl.files]
       if (input$radio_correl == "Selection") {
-        imgs.correl.rescale <- lapply(imgs.correl.selection, my.rescale)
+        # imgs.correl.rescale <- lapply(imgs.correl.selection, my.rescale)
+        imgs.correl <- rv$img.list.crop[rv$correl.files] %>% 
+          set_names(basename(rv$correl.files))
       } else {
         # Analyse entire image: 
-        imgs.correl.rescale <- lapply(imgs.correl.complete, my.rescale)
+        # imgs.correl.rescale <- lapply(imgs.correl.complete, my.rescale)
+        imgs.correl <- rv$img.list[rv$correl.files] %>% 
+          set_names(basename(rv$correl.files))
       }
+      
+      
       print("... apply threshold mask:")
-      # browser()
-      
-      
-      
       if (input$check_mask == "TRUE") {
         
         # Calculate thresholds:
         threshold.method <- "IJDefault"
-        thresholds <- sapply(imgs.correl.selection, function(im) {
+        thresholds <- sapply(imgs.correl, function(im) {
           im2 <- round(im * 65520, 0)
           a <- autothresholdr::auto_thresh(im2, threshold.method)
           b <- as.numeric(a)
@@ -550,19 +559,19 @@ shinyServer(function(input, output, server, session) {
         
         # Generate masks (logical arrays):  
         the.masks <- vector("list", 2)
-        ics1 <- round(imgs.correl.selection[[1]] * 65520, 0)
-        ics2 <- round(imgs.correl.selection[[2]] * 65520, 0)
+        ics1 <- round(imgs.correl[[1]] * 65520, 0)
+        ics2 <- round(imgs.correl[[2]] * 65520, 0)
         the.masks[[1]] <- ics1 >= thresholds[1]
         the.masks[[2]] <- ics2 >= thresholds[2]
         
         mask.combined <- the.masks[[1]] | the.masks[[2]]
-        rm(the.masks)
+        # rm(the.masks)
       } else {
         mask.combined <- array(rep(TRUE, imager::nPix(imgs.correl.rescale[[1]])),
                                dim(imgs.correl.rescale[[1]]))
       }
       
-      imgs.correl <- lapply(imgs.correl.selection, function(img) {
+      imgs.correl.masked <- lapply(imgs.correl, function(img) {
         img[!mask.combined] <- NA
         img
       })
@@ -571,7 +580,7 @@ shinyServer(function(input, output, server, session) {
       rv$img.list.mask <- imager::imappend(list(as.cimg(mask.combined), imgs.correl[[1]]), axis = "x")
       
       print("... calculate correlations:")
-      b <- imgs.correl %>%
+      b <- imgs.correl.masked %>%
         purrr::map(as.matrix) %>%
         purrr::map(as.vector) %>%
         set_names(c("x", "y"))
@@ -581,14 +590,55 @@ shinyServer(function(input, output, server, session) {
       # Pearson correlation coefficient:
       pcc <- cor(b[[1]], b[[2]],
                     use = "pairwise.complete.obs")
-      print(paste("pcc:", pcc))
+      print(paste("... PCC:", pcc))
       
       # Manders Overlap Coefficient
       moc <- sum(b[[1]] * b[[2]], na.rm=TRUE) / sqrt(sum(b[[1]]^2, na.rm=TRUE) * sum(b[[2]]^2, na.rm=TRUE))
-      print(paste("moc:", moc))
+      print(paste("... MOC:", moc))
       
-      df.correl <- data.frame(PCC = pcc,
-                              MOC = moc)
+      ## MCC  
+      # browser()
+      px.int <- vector("list", 2)
+      masks.combined.and <- the.masks[[1]] & the.masks[[2]]
+      
+      print(paste("... Sum mask 1:", sum(the.masks[[1]], na.rm=TRUE)))
+      print(paste("... Sum mask 2:", sum(the.masks[[2]], na.rm=TRUE)))
+      print(paste("... Sum mask combined (OR):", sum(mask.combined, na.rm=TRUE)))
+      print(paste("... Sum mask combined (AND):", sum(masks.combined.and, na.rm=TRUE)))
+      
+      ## Image 1:
+      img1.mask1 <- imgs.correl[[1]]
+      img1.mask1[!the.masks[[1]]] <- NA
+      img1.mask2 <- imgs.correl[[1]]
+      img1.mask2[!masks.combined.and] <- NA
+      img1.mask1.sum <- sum(img1.mask1, na.rm = TRUE)
+      img1.mask2.sum <- sum(img1.mask2, na.rm = TRUE)
+      mcc.m1 <- img1.mask2.sum / img1.mask1.sum
+      print(paste("...", names(imgs.correl)[1]))
+      print(paste("... Sum image 1:", sum(imgs.correl[[1]], na.rm=TRUE)))
+      print(paste("... img1.mask1.sum:", img1.mask1.sum))
+      print(paste("... img1.mask2.sum:", img1.mask2.sum))
+      print(paste("... mcc.m1:", mcc.m1))
+      
+      ## Image 2:
+      img2.mask1 <- imgs.correl[[2]]
+      img2.mask1[!the.masks[[2]]] <- NA
+      img2.mask2 <- imgs.correl[[2]]
+      img2.mask2[!masks.combined.and] <- NA
+      img2.mask1.sum <- sum(img2.mask1, na.rm = TRUE)
+      img2.mask2.sum <- sum(img2.mask2, na.rm = TRUE)
+      mcc.m2 <- img2.mask2.sum / img2.mask1.sum
+      print(paste("...", names(imgs.correl)[2]))
+      print(paste("... Sum image 2:", sum(imgs.correl[[2]], na.rm=TRUE)))
+      print(paste("... img2.mask1.sum:", img2.mask1.sum))
+      print(paste("... img2.mask2.sum:", img2.mask2.sum))
+      print(paste("... mcc.m2:", mcc.m2))
+      
+      df.correl <- data.frame(Thresholds = paste(thresholds, collapse=";"),
+                              PCC = pcc,
+                              MOC = moc,
+                              MCC_M1 = scales::percent(mcc.m1, accuracy = 0.01),
+                              MCC_M2 = scales::percent(mcc.m2, accuracy = 0.01))
       
       print(df.correl)
       output$table_correl <- renderTable(df.correl, digits=4)
