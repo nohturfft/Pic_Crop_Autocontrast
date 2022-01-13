@@ -261,6 +261,28 @@ squeeze_filename <- function(the.paths, max.char=24) {
 # squeeze_filename(x)
 # debug(squeeze_filename)
 
+my.session.info <- function() {
+  if (isTRUE(rstudioapi::isAvailable())) {
+    rstudio_version <- rstudioapi::versionInfo()$version
+  } else {
+    rstudio_version <- "?"
+  }
+  
+  lib_paths <- c("\n\n.libPaths():", .libPaths(), "\n")
+  
+  rstudio_version <- paste("RStudio version:", rstudio_version)
+  a <- capture.output(sessionInfo())
+  b <- gsub("^ *\\[[0-9]*\\]", "", a)
+  c <- stringr::str_trim(b)
+  d <- paste(c(getwd(),
+               rstudio_version, "\n",
+               lib_paths,
+               format(Sys.time(), "Date: %a %b %d, %Y. Time: %X"),
+               paste("username:", system("whoami", intern=TRUE)),
+               c))
+  d
+} # end function my.session.info()
+
 #-------------------------------------------------------------------------------!
 # Defaults ####
 #-------------------------------------------------------------------------------!
@@ -385,8 +407,11 @@ shinyServer(function(input, output, server, session) {
       output$summary_table <- renderTable({
         data.frame(
           Pic = seq_along(rv$img.list.original),
-          Intensity.Min = sapply(rv$img.list.original, function(x) {min(x, na.rm=TRUE)}),
-          Intensity.Max = sapply(rv$img.list.original, function(x) {max(x, na.rm=TRUE)}),
+          Height = sapply(rv$img.list.original, imager::height),
+          Width = sapply(rv$img.list.original, imager::width),
+          Min = sapply(rv$img.list.original, function(x) {min(x, na.rm=TRUE)}),
+          Max = sapply(rv$img.list.original, function(x) {max(x, na.rm=TRUE)}),
+          Saturation = sapply(rv$img.list.original, function(x) {sum(x==1, na.rm=TRUE)}),
           Missing = sapply(rv$img.list.original, function(x) {sum(is.na(x))})
         )
       })
@@ -964,6 +989,12 @@ shinyServer(function(input, output, server, session) {
   }) # end observe
   
   
+  observeEvent(input$show_session_info, {
+    output$session_info <- renderPrint({
+      cat(my.session.info(), sep="<br>\n")
+    })
+  })
+  
   
   # Quit button ####
   observeEvent(input$navbar, {
@@ -973,3 +1004,5 @@ shinyServer(function(input, output, server, session) {
     }
   })
 })
+
+
