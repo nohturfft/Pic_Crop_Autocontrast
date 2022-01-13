@@ -128,20 +128,22 @@ shinyUI(
                                  ), # end hidden
                                  style = "primary"
                  ), # end bsCollapsePanel
-                 bsCollapsePanel("Correlation", 
-                                 hidden(
-                                   tags$div(id="div_plot_correlation",
-                                            plotOutput("plot_correlation")
-                                   ) # end tags$div
-                                 ), # end hidden
-                                 style = "primary"
-                 ), # end bsCollapsePanel
+                 
                  bsCollapsePanel("Masks", 
-                                 hidden(
+                                 # hidden(
                                    tags$div(id="div_plot_masks",
                                             plotOutput("plot_masks")
-                                   ) # end tags$div
-                                 ), # end hidden
+                                   ), # end tags$div
+                                 # ), # end hidden
+                                 style = "primary"
+                 ), # end bsCollapsePanel
+                 
+                 bsCollapsePanel("Masked pics", 
+                                 # hidden(
+                                   tags$div(id="div_plot_correlation",
+                                            plotOutput("plot_correlation")
+                                   ), # end tags$div
+                                 # ), # end hidden
                                  style = "primary"
                  ) # end bsCollapsePanel
                ), # end bsCollapse 

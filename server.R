@@ -602,7 +602,8 @@ shinyServer(function(input, output, server, session) {
       })
       
       print("... prepare masked images for output:")
-      rv$img.list.mask <- imager::imappend(list(as.cimg(mask.combined), imgs.correl[[1]]), axis = "x")
+      # rv$img.list.mask <- imager::imappend(list(as.cimg(mask.combined), imgs.correl[[1]]), axis = "x")
+      rv$img.list.mask <- the.masks
       
       print("... calculate correlations:")
       b <- imgs.correl.masked %>%
@@ -970,21 +971,17 @@ shinyServer(function(input, output, server, session) {
   
   observe({
     # Output plot: masked selections ####
+    # browser()
     if (!is.null(rv$img.list.mask)) {
-      # browser()
-      print("output$plot_correlation (Plot masks)")
-      if (imager::width(rv$img.list.mask) <= rv$montage.max.width) {
-        print("... Image size ok")
-        p <- rv$img.list.mask
-      } else {
-        print("... reducing image size.")
-        p <- EBImage::resize(x=rv$img.list.mask, w=rv$montage.max.width)
-      }
-      print("... hello 1")
+      
+      print("output$plot_masks")
+      
+      p.list <- lapply(rv$img.list.mask, as.cimg)
+      p <- imager::imappend(p.list, axis = "x")
+    
       output$plot_masks <- renderPlot({
-        plot(p, all=TRUE)
+        plot(p, axes=FALSE)
       })
-      print("... hello 2")
     } # end if
   }) # end observe
   
