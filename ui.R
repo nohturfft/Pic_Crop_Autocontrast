@@ -135,16 +135,50 @@ shinyUI(
                                    ) # end tags$div
                                  ), # end hidden
                                  style = "primary"
+                 ), # end bsCollapsePanel
+                 bsCollapsePanel("Masks", 
+                                 hidden(
+                                   tags$div(id="div_plot_masks",
+                                            plotOutput("plot_masks")
+                                   ) # end tags$div
+                                 ), # end hidden
+                                 style = "primary"
                  ) # end bsCollapsePanel
                ), # end bsCollapse 
         ) # end column
       ) # fluidPage
     ), # end TabPanel
+    
+    navbarMenu("More",
+               tabPanel("Session info",
+                        # downloadButton(
+                        #   outputId = "download_session_info",
+                        #   label = "Save session info"
+                        # ),
+                        actionButton(
+                          inputId = "show_session_info",
+                          label = "Show session info"
+                        ),
+                        htmlOutput("session_info")
+               ),
+               # tabPanel("Database file",
+               #          actionButton(
+               #            inputId = "show_database_filename",
+               #            label = "Show database filename"
+               #          ),
+               #          textOutput("database.filename")
+               # ),
+               tabPanel("About",
+                        paste("App developed by:", "Axel Nohturfft")
+               )
+    ), # end navbarMenu
+    
     tabPanel(
       title = "Quit",
       value="stop",
       icon = icon("circle-o-notch")
     ) # end tabPanel "quit"
+    
   ) # end navbarPage
 ) # end ShinyUI
 
