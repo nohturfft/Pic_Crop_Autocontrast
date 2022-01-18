@@ -10,19 +10,32 @@
 #-------------------------------------------------------------------------------!
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")}
+library(BiocManager)
+options(repos = BiocManager::repositories())
 if (!requireNamespace("magick", quietly = TRUE)) {
   install.packages("magick")}
 if (!requireNamespace("EBImage", quietly = TRUE)) {
   BiocManager::install("EBImage")}
 if (!requireNamespace("shiny", quietly = TRUE)) {
   install.packages("shiny")}
+if (!requireNamespace("shinyBS", quietly = TRUE)) {
+  install.packages("shinyBS")}
+if (!requireNamespace("shinyjs", quietly = TRUE)) {
+  install.packages("shinyjs")}
+if (!requireNamespace("imager", quietly = TRUE)) {
+  install.packages("imager")}
+if (!requireNamespace("magrittr", quietly = TRUE)) {
+  install.packages("magrittr")}
+if (!requireNamespace("rhandsontable", quietly = TRUE)) {
+  install.packages("rhandsontable")}
+if (!requireNamespace("purrr", quietly = TRUE)) {
+  install.packages("purrr")}
 
 
 #-------------------------------------------------------------------------------!
 # Packages 
 #-------------------------------------------------------------------------------!
-library(BiocManager)
-options(repos = BiocManager::repositories())
+
 library(magick)
 library(EBImage)
 library(shiny)
