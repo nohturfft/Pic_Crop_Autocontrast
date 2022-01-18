@@ -4,6 +4,20 @@
 # 4x: 68.7
 # 20x: 342.4
 # 40x: 689.5
+
+#-------------------------------------------------------------------------------!
+# Check packages 
+#-------------------------------------------------------------------------------!
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")}
+if (!requireNamespace("magick", quietly = TRUE)) {
+  install.packages("magick")}
+if (!requireNamespace("EBImage", quietly = TRUE)) {
+  BiocManager::install("EBImage")}
+if (!requireNamespace("shiny", quietly = TRUE)) {
+  install.packages("shiny")}
+
+
 #-------------------------------------------------------------------------------!
 # Packages 
 #-------------------------------------------------------------------------------!
@@ -22,7 +36,7 @@ library(purrr)
 # help(package="imager")
 # help(package="magick")
 
-options(shiny.maxRequestSize=10*1024^2)
+options(shiny.maxRequestSize=20*1024^2)
 
 #-------------------------------------------------------------------------------!
 # Functions ####
