@@ -16,6 +16,12 @@ if (!requireNamespace("magick", quietly = TRUE)) {
   install.packages("magick")}
 if (!requireNamespace("EBImage", quietly = TRUE)) {
   BiocManager::install("EBImage")}
+if (!requireNamespace("rstudioapi", quietly = TRUE)) {
+  install.packages("rstudioapi")}
+if (!requireNamespace("autothresholdr", quietly = TRUE)) {
+  install.packages("autothresholdr")}
+if (!requireNamespace("scales", quietly = TRUE)) {
+  install.packages("scales")}
 if (!requireNamespace("imager", quietly = TRUE)) {
   install.packages("imager")}
 if (!requireNamespace("shiny", quietly = TRUE)) {
@@ -24,8 +30,6 @@ if (!requireNamespace("shinyBS", quietly = TRUE)) {
   install.packages("shinyBS")}
 if (!requireNamespace("shinyjs", quietly = TRUE)) {
   install.packages("shinyjs")}
-if (!requireNamespace("imager", quietly = TRUE)) {
-  install.packages("imager")}
 if (!requireNamespace("magrittr", quietly = TRUE)) {
   install.packages("magrittr")}
 if (!requireNamespace("rhandsontable", quietly = TRUE)) {
