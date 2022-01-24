@@ -16,6 +16,8 @@ if (!requireNamespace("magick", quietly = TRUE)) {
   install.packages("magick")}
 if (!requireNamespace("EBImage", quietly = TRUE)) {
   BiocManager::install("EBImage")}
+if (!requireNamespace("imager", quietly = TRUE)) {
+  install.packages("imager")}
 if (!requireNamespace("shiny", quietly = TRUE)) {
   install.packages("shiny")}
 if (!requireNamespace("shinyBS", quietly = TRUE)) {
