@@ -178,6 +178,9 @@ make.scalebar.panel <- function(composite, bar.height, txt.size, txt, ofset, far
 
 make.file.info.panel <- function(basename.vector, composite, txt.size, padding) {
   print("--- Function: make.file.info.panel()")
+  print(paste(c("   -- names:", basename.vector), collapse=" "))
+  print(paste("   -- txt.size:", txt.size))
+  print(paste("   -- padding:", padding))
   panel.height <- (txt.size * length(basename.vector)) + padding + padding
   panel.width <- imager::width(composite)
   padding.top <- padding
