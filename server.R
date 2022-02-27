@@ -55,7 +55,17 @@ library(purrr)
 # help(package="imager")
 # help(package="magick")
 
+#-------------------------------------------------------------------------------!
+# Parameters ####
+#-------------------------------------------------------------------------------!
 options(shiny.maxRequestSize=20*1024^2)
+my.rgb.colors <- list(
+  red=c(255, 0, 0),
+  blue=c(115, 180, 255),
+  green=c(50, 250, 0)
+)
+my.rgb.colors[["red"]]
+# my.rgb.colors["red"][[1]]
 
 #-------------------------------------------------------------------------------!
 # Functions ####
@@ -91,6 +101,7 @@ my.crop <- function(pic, breite, start.x, start.y) {
 }
 
 make.gap <- function(image.list, gap.width, gap.col="white") {
+  print("--- Function: make.gap()")
   imager::imfill(x=gap.width, y=height(image.list[[1]]), z=1, val = gap.col) %>% 
     imager::grayscale(.)
 }
@@ -156,25 +167,59 @@ compose.info <- function(pic.list) {
 }
 # undebug(compose.info)
 
+# my.false.colorise <- function(bild, farbe) {
+#   print("--- Function: my.false.colorise()")
+#   print(paste("    -- farbe:", farbe))
+#   farbe <- tolower(farbe)
+#   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
+#   
+#   bild.rescaled <- my.rescale(bild)
+#   
+#   if (farbe == "red") {
+#     pic <- EBImage::rgbImage(red=bild.rescaled)
+#   } else if (farbe == "green") {
+#     pic <- EBImage::rgbImage(green=bild.rescaled)
+#   } else if (farbe == "blue") {
+#     pic <- EBImage::rgbImage(blue=bild.rescaled)
+#   } else if (farbe == "grayscale") {
+#     pic <- bild.rescaled
+#   }
+#   pic
+# }
+
 my.false.colorise <- function(bild, farbe) {
   print("--- Function: my.false.colorise()")
   print(paste("    -- farbe:", farbe))
   farbe <- tolower(farbe)
   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
   
+  print(paste("    -- run my.rescale...", farbe))
   bild.rescaled <- my.rescale(bild)
   
-  if (farbe == "red") {
-    pic <- EBImage::rgbImage(red=bild.rescaled)
-  } else if (farbe == "green") {
-    pic <- EBImage::rgbImage(green=bild.rescaled)
-  } else if (farbe == "blue") {
-    pic <- EBImage::rgbImage(blue=bild.rescaled)
-  } else if (farbe == "grayscale") {
-    pic <- bild.rescaled
+  if (farbe == "grayscale") {
+    pic <- bild
+  } else {
+    pic <- EBImage::rgbImage(red=bild.rescaled * (my.rgb.colors[[farbe]][1] / 255),
+                             green= bild.rescaled * (my.rgb.colors[[farbe]][2] / 255),
+                             blue= bild.rescaled * (my.rgb.colors[[farbe]][3] / 255))
   }
+  
+  # if (farbe == "red") {
+  #   pic <- EBImage::rgbImage(red=bild.rescaled)
+  # } else if (farbe == "green") {
+  #   pic <- EBImage::rgbImage(green=bild.rescaled)
+  # } else if (farbe == "blue") {
+  #   pic <- EBImage::rgbImage(blue=bild.rescaled)
+  # } else if (farbe == "grayscale") {
+  #   pic <- bild.rescaled
+  # }
+  
+  print("   -- done here. (my.false.colorise())")
   pic
 }
+
+
+EBImage::rgbImage(red=x * (115/255), green=x * (180/255), blue=x * (255/255))
 
 make.scalebar.panel <- function(composite, bar.height, txt.size, txt, ofset, farbe, padding, breite.um, px.per.um) {
   print("--- Function: make.scalebar.panel()")
