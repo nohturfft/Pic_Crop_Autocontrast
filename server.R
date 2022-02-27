@@ -167,26 +167,6 @@ compose.info <- function(pic.list) {
 }
 # undebug(compose.info)
 
-# my.false.colorise <- function(bild, farbe) {
-#   print("--- Function: my.false.colorise()")
-#   print(paste("    -- farbe:", farbe))
-#   farbe <- tolower(farbe)
-#   stopifnot(farbe %in% c("red", "green", "blue", "grayscale"))
-#   
-#   bild.rescaled <- my.rescale(bild)
-#   
-#   if (farbe == "red") {
-#     pic <- EBImage::rgbImage(red=bild.rescaled)
-#   } else if (farbe == "green") {
-#     pic <- EBImage::rgbImage(green=bild.rescaled)
-#   } else if (farbe == "blue") {
-#     pic <- EBImage::rgbImage(blue=bild.rescaled)
-#   } else if (farbe == "grayscale") {
-#     pic <- bild.rescaled
-#   }
-#   pic
-# }
-
 my.false.colorise <- function(bild, farbe) {
   print("--- Function: my.false.colorise()")
   print(paste("    -- farbe:", farbe))
@@ -203,16 +183,6 @@ my.false.colorise <- function(bild, farbe) {
                              green= bild.rescaled * (my.rgb.colors[[farbe]][2] / 255),
                              blue= bild.rescaled * (my.rgb.colors[[farbe]][3] / 255))
   }
-  
-  # if (farbe == "red") {
-  #   pic <- EBImage::rgbImage(red=bild.rescaled)
-  # } else if (farbe == "green") {
-  #   pic <- EBImage::rgbImage(green=bild.rescaled)
-  # } else if (farbe == "blue") {
-  #   pic <- EBImage::rgbImage(blue=bild.rescaled)
-  # } else if (farbe == "grayscale") {
-  #   pic <- bild.rescaled
-  # }
   
   print("   -- done here. (my.false.colorise())")
   pic
