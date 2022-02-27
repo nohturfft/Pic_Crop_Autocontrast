@@ -22,6 +22,7 @@ shinyServer(function(input, output, server, session) {
   # Reactive values ####
   rv <- reactiveValues(
     files = NULL,
+    basenames.selected = NULL,
     img.list = NULL,
     img.list.crop = NULL,
     img.list.correl = NULL,
@@ -110,6 +111,8 @@ shinyServer(function(input, output, server, session) {
         c
       }) %>% 
         set_names(basename(rv$files$name))
+      
+      rv$basenames.selected <- basename(rv$files$name)
       
       rv$img.list <- rv$img.list.original #%>% 
         # set_names(names(rv$img.list.original))
@@ -224,6 +227,7 @@ shinyServer(function(input, output, server, session) {
           indx.img.selected <- which(squeeze_filename(rv$files$name) == file.selected)
           print(paste("... indx.img.selected:", indx.img.selected))
           rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
+          rv$basenames.selected[[hot.row]] <- basename(rv$files$name)[indx.img.selected]
         } else if (hot.col == 3) { # User changed a color
           color.selected <- input$hot_files$changes$changes[[1]][[4]]
           print(paste("... Color chosen:", color.selected))
@@ -231,7 +235,7 @@ shinyServer(function(input, output, server, session) {
         } # end if
       } # end if
     } # end if
-    browser()
+    # browser()
     print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
   }) # end observeEvent(input$hot_files)
   
@@ -556,7 +560,7 @@ shinyServer(function(input, output, server, session) {
                                           ofset=rv$param_scalebar$bar.offset)
             print("... done making scalebar panel.")
             ## Input files panel: ####
-            file.info.panel <- make.file.info.panel(names(rv$img.list.crop.rescale),
+            file.info.panel <- make.file.info.panel(isolate(rv$basenames.selected),
                                                     # xbasename(isolate(rv$files$name)),
                                                     composite=rv$composite.rescaled,
                                                     txt.size=rv$param_scalebar$text.height,
@@ -677,13 +681,12 @@ shinyServer(function(input, output, server, session) {
       # Output plot: final montage ####
       print("output$plot_montage (Plot final images)")
       if (!is.null(rv$composite.rescaled)) { # class: "Image"/"EBImage"
-        # plot(rv$composite.rescaled, all=TRUE)
-        # plot(rv$composite.with.info, all=TRUE)
         plot(rv$composite.with.info) # # class: "Image"/"EBImage"
       } # end if
     },
     height="auto"
     ) # end renderPlot
+    print("    -- done here. (output$plot_montage)")
   })
   
   
