@@ -111,8 +111,8 @@ shinyServer(function(input, output, server, session) {
       }) %>% 
         set_names(basename(rv$files$name))
       
-      rv$img.list <- rv$img.list.original %>% 
-        set_names(names(rv$img.list.original))
+      rv$img.list <- rv$img.list.original #%>% 
+        # set_names(names(rv$img.list.original))
       
       output$summary_table <- renderTable({
         data.frame(
@@ -217,20 +217,21 @@ shinyServer(function(input, output, server, session) {
         print(paste("... row selected:", hot.row))
         hot.col <- input$hot_files_select$select$c
         print(paste("... column selected:", hot.col))
-        if (hot.col == 2) {
+        if (hot.col == 2) { # User changed a file
           file.selected <- input$hot_files$changes$changes[[1]][[4]]
           print(paste("... file selected:", file.selected))
           # indx.img.selected <- which(basename(rv$files$name) == file.selected)
           indx.img.selected <- which(squeeze_filename(rv$files$name) == file.selected)
           print(paste("... indx.img.selected:", indx.img.selected))
           rv$img.list[[hot.row]] <- rv$img.list.original[[indx.img.selected]]
-        } else if (hot.col == 3) {
+        } else if (hot.col == 3) { # User changed a color
           color.selected <- input$hot_files$changes$changes[[1]][[4]]
           print(paste("... Color chosen:", color.selected))
           rv$color.list[hot.row] <- color.selected
         } # end if
       } # end if
     } # end if
+    browser()
     print(paste("... done here (observeEvent(input$hot_files)).", Sys.time()))
   }) # end observeEvent(input$hot_files)
   
@@ -467,7 +468,9 @@ shinyServer(function(input, output, server, session) {
       tmp <- lapply(rv$img.list.crop, my.rescale)
       rv$img.list.crop.rescale <- lapply(seq_along(rv$img.list.crop), function(i) {
         my.false.colorise(tmp[[i]], rv$color.list[i])
-      }) # end lapply
+      }) %>% # end lapply
+        set_names(names(rv$img.list.crop))
+      # browser()
     } # end if
     print(paste("... done here (Autocontrast + color).", Sys.time()))
   }) # end observe
@@ -504,6 +507,7 @@ shinyServer(function(input, output, server, session) {
     input$apply_max_width
     
     max.width <- isolate(input$montage_max_width)
+    # rv$img.list.crop.rescale: list of cimg images / numeric arrays
     if (! is.null(rv$img.list.crop.rescale)) {
       if (rv$gap.size > 0) {
         img.gap <- make.gap(rv$img.list.crop.rescale, rv$gap.size, "white")
@@ -512,6 +516,8 @@ shinyServer(function(input, output, server, session) {
         rv$composite.rescaled <- compose.pics(rv$img.list.crop.rescale, pic.gap=NULL, max.width)
       } # end if
     } # end if
+    
+    # class(rv$composite.rescaled): "Image"/"EBImage"
     
     rv$montage.max.width <- input$montage_max_width
     
@@ -550,10 +556,12 @@ shinyServer(function(input, output, server, session) {
                                           ofset=rv$param_scalebar$bar.offset)
             print("... done making scalebar panel.")
             ## Input files panel: ####
-            file.info.panel <- make.file.info.panel(basename(isolate(rv$files$name)),
+            file.info.panel <- make.file.info.panel(names(rv$img.list.crop.rescale),
+                                                    # xbasename(isolate(rv$files$name)),
                                                     composite=rv$composite.rescaled,
                                                     txt.size=rv$param_scalebar$text.height,
                                                     padding=rv$param_scalebar$padding)
+            # browser()
             print("... done making file info panel.")
             ## Selection info panel: ####
             selection.info.panel <- make.selection.info.panel(x=isolate(rv$crop.x),
@@ -668,10 +676,10 @@ shinyServer(function(input, output, server, session) {
     output$plot_montage <- renderPlot({
       # Output plot: final montage ####
       print("output$plot_montage (Plot final images)")
-      if (!is.null(rv$composite.rescaled)) {
+      if (!is.null(rv$composite.rescaled)) { # class: "Image"/"EBImage"
         # plot(rv$composite.rescaled, all=TRUE)
         # plot(rv$composite.with.info, all=TRUE)
-        plot(rv$composite.with.info)
+        plot(rv$composite.with.info) # # class: "Image"/"EBImage"
       } # end if
     },
     height="auto"
